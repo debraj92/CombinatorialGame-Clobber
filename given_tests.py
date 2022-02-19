@@ -12,6 +12,7 @@ PROVEN = 0
 DISPROVEN = 1
 INFINITY = 1000000
 
+
 def opponent(player):
     if player == BLACK:
         return WHITE
@@ -42,7 +43,9 @@ def format_winning_move(winning_move):
     else:
         return "None"
 
+
 play = PlayClobber()
+
 
 class clobberPlayTests(unittest.TestCase):
     def test1(self):
@@ -439,6 +442,52 @@ class clobberPlayTests(unittest.TestCase):
         )
         self.assertEqual(outcome, PROVEN_LOSS)
 
+    def test33(self):
+        start = time.time()
+        first_player = BLACK
+        clobber = Clobber_1d("BWBWBWBWBWBW.BWBWBWBWBWBW", first_player)
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
+            clobber, start, 300
+        )
+        end = time.time()
+        print(
+            f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
+        )
+        self.assertEqual(outcome, PROVEN_LOSS)
+
+    def test34(self):
+        start = time.time()
+        first_player = BLACK
+        clobber = Clobber_1d("BWBWBWBWBWBW.WBWBWBWBWBWB", first_player)
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
+            clobber, start, 300
+        )
+        end = time.time()
+        print(
+            f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
+        )
+        self.assertEqual(outcome, PROVEN_LOSS)
+
+    """
+    Current:
+    B 3-4 49.849161863327026 2190776
+    Previous:
+    B 3-4 91.35586214065552 9069724
+    
+    Huge difference in the number of nodes searched (thanks to the 2nd player sum 0 pruning).
+    """
+    def test35(self):
+        start = time.time()
+        first_player = BLACK
+        clobber = Clobber_1d("WBWBWBWBWBWBWBWBWBWBWBWBWBWBW", first_player)
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
+            clobber, start, 150
+        )
+        end = time.time()
+        print(
+            f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
+        )
+        self.assertEqual(outcome, PROVEN_WIN)
 
 
 """
@@ -452,7 +501,6 @@ class clobberPlayTests(unittest.TestCase):
         print("Total time ", end - start)
         self.assertEqual(outcome, PROVEN_WIN)
 """
-
 
 """
     #Used 18 MB, under 3.4 mins

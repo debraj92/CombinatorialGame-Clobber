@@ -193,3 +193,54 @@ class Clobber_1d(object):
 
         self.board_hash_value = zobristHashValue
         return self.board_hash_value
+
+    def pruneMovesUsingSecondPlayerWin(self, moves):
+        games = dict()
+        BW = BLACK + WHITE
+        sorted_moves = sorted(moves, key=lambda m: m[0])
+        move_idx = 0
+        moves_subgame = set()
+        foundZeroSum = False
+        sorted_moves_length = len(sorted_moves)
+        current_game = ""
+        inverse_game = ""
+        for i, p in enumerate(self.board):
+            if self.board[i] != EMPTY:
+                current_game += str(self.board[i])
+                inverse_game += str(BW - self.board[i])
+                while move_idx < sorted_moves_length and sorted_moves[move_idx][0] == i:
+                    moves_subgame.add(sorted_moves[move_idx])
+                    move_idx += 1
+            else:
+                if len(current_game) > 0:
+                    if current_game in games:
+                        games.pop(current_game)
+                        foundZeroSum = True
+                    elif inverse_game in games:
+                        games.pop(inverse_game)
+                        foundZeroSum = True
+                    else:
+                        games[current_game] = moves_subgame
+
+                    current_game = ""
+                    inverse_game = ""
+                    moves_subgame = set()
+
+        if len(current_game) > 0:
+            if current_game in games:
+                games.pop(current_game)
+                foundZeroSum = True
+            elif inverse_game in games:
+                games.pop(inverse_game)
+                foundZeroSum = True
+            else:
+                games[current_game] = moves_subgame
+
+        if foundZeroSum:
+            allowedMoves = set()
+            for _, moves in games.items():
+                allowedMoves.update(moves)
+            return allowedMoves
+        else:
+            return moves
+

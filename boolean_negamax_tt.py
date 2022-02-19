@@ -29,7 +29,7 @@ class PlayClobber:
     def negate(self, advantage):
         advantage *= -1
 
-    def negamaxClobber1d(self, state, alpha, beta, depth, maxlevel, start_time, timeout):
+    def negamaxClobber1d(self, state, alpha, beta, depth, start_time, timeout):
 
         if (time.time() - start_time) > timeout:
             self.out_of_time = True
@@ -45,12 +45,13 @@ class PlayClobber:
 
         if boardHash not in self.moves_:
             legalMoves = state.computeLegalMoves()
+            legalMoves = state.pruneMovesUsingSecondPlayerWin(legalMoves)
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
 
         isEndOfGame = self.isEndOfGame(legalMoves)
-        if isEndOfGame or depth == 0:
+        if isEndOfGame:
             outcome = state.staticallyEvaluateForToPlay(isEndOfGame)
             if outcome == self.PROVEN_WIN:
                 self.proven_win_states.add(boardHash)
@@ -72,7 +73,7 @@ class PlayClobber:
             if nextStateHash not in self.proven_lost_states:
                 # Next State Win or unknown
                 outcome = self.negamaxClobber1d(
-                    state, -beta, -alpha, depth - 1, maxlevel, start_time, timeout
+                    state, -beta, -alpha, depth + 1, start_time, timeout
                 )
                 if self.out_of_time:
                     return None
@@ -90,7 +91,7 @@ class PlayClobber:
                 self.proven_lost_states.remove(nextStateHash)
                 if boardHash in self.moves_:
                     self.moves_.pop(boardHash)
-                if depth == maxlevel:
+                if depth == 0:
                     self.winningMove = nextMove
                 return self.INFINITY
 
@@ -99,7 +100,7 @@ class PlayClobber:
                 self.proven_lost_states.remove(nextStateHash)
                 if boardHash in self.moves_:
                     self.moves_.pop(boardHash)
-                if depth == maxlevel:
+                if depth == 0:
                     self.winningMove = nextMove
                 return self.INFINITY
 
@@ -136,7 +137,7 @@ class PlayClobber:
         boardHash = state.getBoardHash()
         depth = 1000
         outcome = self.negamaxClobber1d(
-            state, -self.INFINITY, self.INFINITY, depth, depth, start_time, timeout
+            state, -self.INFINITY, self.INFINITY, 0, start_time, timeout
         )
         if outcome == self.INFINITY:
             return self.PROVEN_WIN, self.winningMove, len(self.nodes_visited)
