@@ -160,23 +160,6 @@ class Clobber_1d(object):
         else:
             return self.PROVEN_LOSS
 
-    def computeLegalMoves(self):
-        isfirstPlayer = self.toPlay == self.first_player
-        moves = set()
-        opp = self.opp_color()
-        last = len(self.board) - 1
-        positions = self.player_positions
-        if not isfirstPlayer:
-            positions = self.opponent_positions
-
-        for position in positions:
-            if position > 0 and self.board[position - 1] == opp:
-                moves.add((position, position - 1))
-            if position < last and self.board[position + 1] == opp:
-                moves.add((position, position + 1))
-
-        return moves
-
     def printPositions(self):
         print("Players in ", self.player_positions)
         print("Opponents in ", self.opponent_positions)
@@ -194,15 +177,13 @@ class Clobber_1d(object):
         self.board_hash_value = zobristHashValue
         return self.board_hash_value
 
-    def pruneMovesUsingSecondPlayerWin(self):
+    def computePrunedMovesFromSubgames(self):
 
         games = dict()
         BW = BLACK + WHITE
         moves_subgame = set()
-        foundZeroSum = False
         current_game = ""
         inverse_game = ""
-        unpruned_moves = set()
 
         isfirstPlayer = self.toPlay == self.first_player
         opp = self.opp_color()
@@ -218,18 +199,14 @@ class Clobber_1d(object):
                 if i in positions:
                     if i > 0 and self.board[i - 1] == opp:
                         moves_subgame.add((i, i - 1))
-                        unpruned_moves.add((i, i - 1))
                     if i < last and self.board[i + 1] == opp:
                         moves_subgame.add((i, i + 1))
-                        unpruned_moves.add((i, i + 1))
             else:
                 if len(current_game) > 0:
                     if current_game in games:
                         games.pop(current_game)
-                        foundZeroSum = True
                     elif inverse_game in games:
                         games.pop(inverse_game)
-                        foundZeroSum = True
                     else:
                         if len(moves_subgame) > 0:
                             games[current_game] = moves_subgame
@@ -241,19 +218,16 @@ class Clobber_1d(object):
         if len(current_game) > 0:
             if current_game in games:
                 games.pop(current_game)
-                foundZeroSum = True
             elif inverse_game in games:
                 games.pop(inverse_game)
-                foundZeroSum = True
             else:
                 if len(moves_subgame) > 0:
                     games[current_game] = moves_subgame
 
-        if foundZeroSum:
-            allowedMoves = set()
-            for _, moves in games.items():
-                allowedMoves.update(moves)
-            return allowedMoves
-        else:
-            return unpruned_moves
+        pruned_moves = set()
+        for _, game in games.items():
+            for move in game:
+                pruned_moves.add(move)
+
+        return pruned_moves
 
