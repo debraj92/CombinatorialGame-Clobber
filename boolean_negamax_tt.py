@@ -23,9 +23,6 @@ class PlayClobber:
         self.INFINITY = 10000
         self.winningMove = ()
 
-    def isEndOfGame(self, legalMoves):
-        return len(legalMoves) == 0
-
     def negate(self, advantage):
         advantage *= -1
 
@@ -44,13 +41,13 @@ class PlayClobber:
             return -self.INFINITY
 
         if boardHash not in self.moves_:
-            legalMoves = state.computeLegalMoves()
-            legalMoves = state.pruneMovesUsingSecondPlayerWin(legalMoves)
+            legalMoves = state.computePrunedMovesFromSubgames()
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
 
-        isEndOfGame = self.isEndOfGame(legalMoves)
+        isEndOfGame = len(legalMoves) == 0
+
         if isEndOfGame:
             outcome = state.staticallyEvaluateForToPlay(isEndOfGame)
             if outcome == self.PROVEN_WIN:
@@ -66,6 +63,7 @@ class PlayClobber:
 
         isStateProvenLoss = True
         opponentWinStates = set()
+
         for nextMove in legalMoves:
             savedHash = state.play(nextMove)
             nextStateHash = state.getBoardHash()
@@ -118,6 +116,8 @@ class PlayClobber:
 
             if advantage_heuristic >= beta:
                 return beta
+
+            """ END OF LOOP """
 
         if isStateProvenLoss:
             self.proven_lost_states.add(boardHash)

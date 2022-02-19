@@ -476,6 +476,7 @@ class clobberPlayTests(unittest.TestCase):
     
     Huge difference in the number of nodes searched (thanks to the 2nd player sum 0 pruning).
     """
+
     def test35(self):
         start = time.time()
         first_player = BLACK
