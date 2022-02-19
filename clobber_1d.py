@@ -208,8 +208,9 @@ class Clobber_1d(object):
                     elif inverse_game in games:
                         games.pop(inverse_game)
                     else:
-                        if len(moves_subgame) > 0:
-                            games[current_game] = moves_subgame
+                        totalMoves = len(moves_subgame)
+                        if totalMoves > 0:
+                            games[current_game] = (moves_subgame, totalMoves)
 
                     current_game = ""
                     inverse_game = ""
@@ -221,13 +222,11 @@ class Clobber_1d(object):
             elif inverse_game in games:
                 games.pop(inverse_game)
             else:
-                if len(moves_subgame) > 0:
-                    games[current_game] = moves_subgame
+                totalMoves = len(moves_subgame)
+                if totalMoves > 0:
+                    games[current_game] = (moves_subgame, totalMoves)
 
-        pruned_moves = set()
-        for _, game in games.items():
-            for move in game:
-                pruned_moves.add(move)
+        allMoves = sorted(games.values(), key=lambda x: x[1], reverse=True)
 
-        return pruned_moves
+        return allMoves
 
