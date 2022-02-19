@@ -476,6 +476,7 @@ class clobberPlayTests(unittest.TestCase):
     
     Huge difference in the number of nodes searched (thanks to the 2nd player sum 0 pruning).
     """
+
     def test35(self):
         start = time.time()
         first_player = BLACK
@@ -489,6 +490,17 @@ class clobberPlayTests(unittest.TestCase):
         )
         self.assertEqual(outcome, PROVEN_WIN)
 
+    def testX(self):
+        first_player = BLACK
+        #clobber = Clobber_1d("BWBWBW", first_player)
+        clobber = Clobber_1d("BBB.WB", WHITE)
+
+        clobber.print_()
+        play = PlayClobber()
+        start = time.time()
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 1000000)
+        print(outcome)
+        assert outcome == PROVEN_WIN #PROVEN_LOSS
 
 """
     # 1 min 10 secs, 8MB

@@ -44,8 +44,8 @@ class PlayClobber:
             return -self.INFINITY
 
         if boardHash not in self.moves_:
-            legalMoves = state.computeLegalMoves()
-            legalMoves = state.pruneMovesUsingSecondPlayerWin(legalMoves)
+            #legalMoves = state.computeLegalMoves()
+            legalMoves = state.pruneMovesUsingSecondPlayerWin()
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
