@@ -16,7 +16,7 @@ class clobberInstanceTests(unittest.TestCase):
 
     def test2(self):
         clobber = Clobber_1d("BWBW", BLACK)
-        moves = clobber.computePrunedMovesFromSubgames()
+        moves = clobber.computePrunedMovesFromSubgames()[0][0]
         self.assertTrue((0, 1) in moves)
         self.assertTrue((2, 1) in moves)
         self.assertTrue((2, 3) in moves)
@@ -26,7 +26,7 @@ class clobberInstanceTests(unittest.TestCase):
         clobber = Clobber_1d("BWBW", BLACK)
         clobber.play((0, 1))
         clobber.play((3, 2))
-        moves = clobber.computePrunedMovesFromSubgames()
+        moves = clobber.computePrunedMovesFromSubgames()[0][0]
         self.assertEqual(len(moves), 1)
         self.assertTrue((1, 2) in moves)
 
@@ -74,7 +74,7 @@ class clobberInstanceTests(unittest.TestCase):
     def test10(self):
         clobber = Clobber_1d("BWBWWB.WBWBBW.BBBB.WWW.BW.BW.BWWB", WHITE)
         moves = clobber.computePrunedMovesFromSubgames()
-        assert moves == {(31, 32), (30, 29)}
+        assert moves[0][0] == {(31, 32), (30, 29)}
 
 
 

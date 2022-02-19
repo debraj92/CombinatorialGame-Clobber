@@ -64,60 +64,61 @@ class PlayClobber:
         isStateProvenLoss = True
         opponentWinStates = set()
 
-        for nextMove in legalMoves:
-            savedHash = state.play(nextMove)
-            nextStateHash = state.getBoardHash()
+        for move_set, _ in legalMoves:
+            for nextMove in move_set:
+                savedHash = state.play(nextMove)
+                nextStateHash = state.getBoardHash()
 
-            if nextStateHash not in self.proven_lost_states:
-                # Next State Win or unknown
-                outcome = self.negamaxClobber1d(
-                    state, -beta, -alpha, depth + 1, start_time, timeout
-                )
-                if self.out_of_time:
-                    return None
+                if nextStateHash not in self.proven_lost_states:
+                    # Next State Win or unknown
+                    outcome = self.negamaxClobber1d(
+                        state, -beta, -alpha, depth + 1, start_time, timeout
+                    )
+                    if self.out_of_time:
+                        return None
+                    else:
+                        advantage_heuristic = -outcome
+                    state.undoMove(nextMove, savedHash)
+                    if advantage_heuristic == -self.INFINITY:
+                        isNextStateWin = True
+                    else:
+                        isNextStateWin = False
                 else:
-                    advantage_heuristic = -outcome
-                state.undoMove(nextMove, savedHash)
-                if advantage_heuristic == -self.INFINITY:
-                    isNextStateWin = True
-                else:
-                    isNextStateWin = False
-            else:
-                # LOSE for next player
-                state.undoMove(nextMove, savedHash)
-                self.proven_win_states.add(boardHash)
-                self.proven_lost_states.remove(nextStateHash)
-                if boardHash in self.moves_:
-                    self.moves_.pop(boardHash)
-                if depth == 0:
-                    self.winningMove = nextMove
-                return self.INFINITY
+                    # LOSE for next player
+                    state.undoMove(nextMove, savedHash)
+                    self.proven_win_states.add(boardHash)
+                    self.proven_lost_states.remove(nextStateHash)
+                    if boardHash in self.moves_:
+                        self.moves_.pop(boardHash)
+                    if depth == 0:
+                        self.winningMove = nextMove
+                    return self.INFINITY
 
-            if nextStateHash in self.proven_lost_states:
-                self.proven_win_states.add(boardHash)
-                self.proven_lost_states.remove(nextStateHash)
-                if boardHash in self.moves_:
-                    self.moves_.pop(boardHash)
-                if depth == 0:
-                    self.winningMove = nextMove
-                return self.INFINITY
+                if nextStateHash in self.proven_lost_states:
+                    self.proven_win_states.add(boardHash)
+                    self.proven_lost_states.remove(nextStateHash)
+                    if boardHash in self.moves_:
+                        self.moves_.pop(boardHash)
+                    if depth == 0:
+                        self.winningMove = nextMove
+                    return self.INFINITY
 
-            elif not isNextStateWin:
-                isStateProvenLoss = False
+                elif not isNextStateWin:
+                    isStateProvenLoss = False
 
-            elif isStateProvenLoss:
-                opponentWinStates.add(nextStateHash)
+                elif isStateProvenLoss:
+                    opponentWinStates.add(nextStateHash)
 
-            # Advantage Heuristic ensures risky game positions are de-prioritized.
-            # Alpha Beta on heuristic values
+                # Advantage Heuristic ensures risky game positions are de-prioritized.
+                # Alpha Beta on heuristic values
 
-            if advantage_heuristic > alpha:
-                alpha = advantage_heuristic
+                if advantage_heuristic > alpha:
+                    alpha = advantage_heuristic
 
-            if advantage_heuristic >= beta:
-                return beta
+                if advantage_heuristic >= beta:
+                    return beta
 
-            """ END OF LOOP """
+                """ END OF LOOP """
 
         if isStateProvenLoss:
             self.proven_lost_states.add(boardHash)
