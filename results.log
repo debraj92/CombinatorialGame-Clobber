@@ -1,44 +1,44 @@
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BW B 1
-B 0-1 7.081031799316406e-05 1
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BW B 1
+B 0-1 0.00013828277587890625 1
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BW W 1
-W 1-0 8.106231689453125e-05 1
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BW W 1
+W 1-0 0.00014543533325195312 1
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BB W 1
-B None 6.198883056640625e-05 0
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BB W 1
+B None 0.0001049041748046875 0
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBW B 1
-W None 0.00032401084899902344 15
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBW B 1
+W None 0.0005717277526855469 9
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBW W 1
-B None 0.00026297569274902344 12
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBW W 1
+B None 0.0005395412445068359 9
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BBBW.BWW B 1
-B 5-6 0.0002181529998779297 7
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BBBW.BWW B 1
+B 5-6 0.000415802001953125 7
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BBBW.BWW W 1
-W 3-2 0.0003459453582763672 8
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BBBW.BWW W 1
+W 3-2 0.0003383159637451172 4
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBWBWBWBW B 1
-B 6-5 0.005205392837524414 334
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBWBWBWBW B 1
+B 6-5 0.008949518203735352 155
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBWBWBWBW W 1
-W 5-6 0.0038547515869140625 261
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBWBWBWBW W 1
+W 5-6 0.011187553405761719 204
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBWBWBWBWBWBWBW B 1
-B 2-1 0.14123845100402832 9041
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBWBWBWBWBWBWBW B 1
+B 2-1 0.18879055976867676 3084
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBWBWBWBWBWBWBW W 1
-W 15-14 0.20771479606628418 13246
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBWBWBWBWBWBWBW W 1
+W 15-14 0.20289182662963867 3263
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBWB.WBWBWBW B 1
-W None 0.015876054763793945 1043
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBWB.WBWBWBW B 1
+W None 0.00029015541076660156 0
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBWB.WBWBWBW W 1
-B None 0.019136905670166016 1254
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBWB.WBWBWBW W 1
+B None 0.00030040740966796875 0
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBWBWBWBWBWBWBWBWB B 1
-? None 0.9800105094909668 58981
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBWBWBWBWBWBWBWBWB B 1
+? None 0.9800231456756592 15280
 
-asaravan@ohaton:~/combinatorial-game-theory>python3 git_good.py BWBWBWBWBWBWBWBWBWBWB W 1
-W 3-4 0.6461238861083984 38079
+debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 git_good.py BWBWBWBWBWBWBWBWBWBWB W 1
+W 3-4 0.563875675201416 9874
