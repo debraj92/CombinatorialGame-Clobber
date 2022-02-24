@@ -68,9 +68,17 @@ class PlayClobber:
             # Play the first move anyway (because we need the winning move)
             l_class = True
             r_class = True
-            for _, _, win, lose in legalMoves:
+            countP = 0
+            countN = 0
+            for _, _, win, lose, isP, isN in legalMoves:
                 l_class = l_class and win and not lose
                 r_class = r_class and not win and lose
+
+                if isP:
+                    countP += 1
+
+                if isN:
+                    countN += 1
 
             if l_class:
                 self.proven_win_states.add(boardHash)
@@ -79,7 +87,15 @@ class PlayClobber:
                 self.proven_lost_states.add(boardHash)
                 return -self.INFINITY
 
-        for move_set, _, _, _ in legalMoves:
+            if countP == len(legalMoves):
+                self.proven_lost_states.add(boardHash)
+                return -self.INFINITY
+
+            if countP == len(legalMoves) - 1 and countN == 1:
+                self.proven_win_states.add(boardHash)
+                return self.INFINITY
+
+        for move_set, _, _, _, _, _ in legalMoves:
             for nextMove in move_set:
                 savedHash = state.play(nextMove)
                 nextStateHash = state.getBoardHash()

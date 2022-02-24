@@ -533,6 +533,15 @@ class clobberPlayTests(unittest.TestCase):
         print("Total time ", end - start)
         self.assertEqual(outcome, PROVEN_WIN)
 
+    def test39(self):
+        start = time.time()
+        clobber = Clobber_1d("BW.WBW.BBWW", BLACK)
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
+            clobber, start, 150
+        )
+        end = time.time()
+        print("Total time ", end - start)
+        self.assertEqual(outcome, PROVEN_LOSS)
 
 if __name__ == "__main__":
     unittest.main()
