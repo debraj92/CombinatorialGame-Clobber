@@ -86,7 +86,7 @@ class TimeoutTest(unittest.TestCase):
         print("\nTest 4")
         start = time.time()
         first_player = WHITE
-        clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWBWBW", first_player)
+        clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBW", first_player)
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(
             clobber, start, 1.5
         )
