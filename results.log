@@ -1,44 +1,30 @@
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BW B 1
-B 0-1 0.0001125335693359375 1
-
+B 0-1 0.00013017654418945312 1
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BW W 1
-W 1-0 0.00012087821960449219 1
-
+W 1-0 0.0001289844512939453 1
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BB W 1
-B None 9.369850158691406e-05 0
-
+B None 0.00010704994201660156 0
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBW B 1
-W None 0.0002722740173339844 7
-
+W None 0.0002932548522949219 7
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBW W 1
-B None 0.00025272369384765625 6
-
+B None 0.0002789497375488281 6
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BBBW.BWW B 1
-B 5-6 0.0003235340118408203 7
-
+B 5-6 0.0002613067626953125 5
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BBBW.BWW W 1
-W 3-2 0.0002422332763671875 4
-
+W 3-2 0.0002574920654296875 4
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBWBWBWBW B 1
-B 6-5 0.002960205078125 68
-
+B 6-5 0.006875038146972656 53
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBWBWBWBW W 1
-W 5-6 0.004551410675048828 135
-
+W 5-6 0.007662534713745117 89
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBWBWBWBWBWBWBW B 1
-B 2-1 0.06541562080383301 2161
-
+B 2-1 0.04758739471435547 1385
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBWBWBWBWBWBWBW W 1
-W 15-14 0.06614446640014648 2234
-
+W 15-14 0.05316901206970215 1601
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBWB.WBWBWBW B 1
-W None 0.0002219676971435547 0
-
+W None 0.0002346038818359375 0
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBWB.WBWBWBW W 1
-B None 0.000225067138671875 0
-
+B None 0.00024437904357910156 0
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBWBWBWBWBWBWBWBWB B 1
-? None 0.980025053024292 29731
-
+? None 0.9800329208374023 30106
 debraj1@ohaton:~/clobber/debraj92/CombinatorialGame-Clobber>python3 alpha_clo.py BWBWBWBWBWBWBWBWBWBWB W 1
-W 3-4 0.3044624328613281 8877
+W 3-4 0.20956015586853027 6137
