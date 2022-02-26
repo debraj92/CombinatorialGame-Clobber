@@ -12,11 +12,10 @@ class EndGameDB:
 
     games = set()
 
-    WINING_B = set()
-    WINING_W = set()
-
-    P = set()
     N = set()
+    P = dict()
+    WINING_B = dict()
+    WINING_W = dict()
 
     def generateGameCombinations(self, boardString, length, maxlength):
 
@@ -51,7 +50,7 @@ class EndGameDB:
                 w_first_result, _, _ = play.negamaxClobberGamePlay(clobber, start_time)
 
                 if w_first_result == PROVEN_LOSS:
-                    self.WINING_B.add(self.encodeBoard(game))
+                    self.WINING_B[self.encodeBoard(game)] = play.getMaxDepth()
             else:
 
                 first_player = WHITE
@@ -61,7 +60,7 @@ class EndGameDB:
                 w_first_result, _, _ = play.negamaxClobberGamePlay(clobber, start_time)
 
                 if w_first_result == PROVEN_WIN:
-                    self.WINING_W.add(self.encodeBoard(game))
+                    self.WINING_W[self.encodeBoard(game)] = play.getMaxDepth()
 
     def createNPpositions(self):
         for game in self.games:
@@ -71,7 +70,7 @@ class EndGameDB:
             play = PlayClobber()
             start_time = time.time()
             b_first_result, _, _ = play.negamaxClobberGamePlay(clobber, start_time)
-
+            max_depth = play.getMaxDepth()
             first_player = WHITE
             clobber = Clobber_1d(game, first_player)
             play = PlayClobber()
@@ -82,12 +81,12 @@ class EndGameDB:
                 self.N.add(self.encodeBoard(game))
 
             if b_first_result == PROVEN_LOSS and w_first_result == PROVEN_LOSS:
-                self.P.add(self.encodeBoard(game))
+                self.P[self.encodeBoard(game)] = max_depth
 
 
 eg = EndGameDB()
 
-MAX_LENGTH = 15
+MAX_LENGTH = 18
 
 for i in range(2, MAX_LENGTH):
     eg.generateGameCombinations("", 0, i)
@@ -96,17 +95,18 @@ eg.createLRclasses()
 eg.createNPpositions()
 
 print(eg.games)
-# print("WINNING B ", eg.WINING_B)
-# print("WINNING W ", eg.WINING_W)
+
 
 with open('winning_b.txt', 'w') as file:
-    file.write(json.dumps(list(eg.WINING_B)))
+    file.write(str(eg.WINING_B))
 
 with open('winning_w.txt', 'w') as file:
-    file.write(json.dumps(list(eg.WINING_W)))
+    file.write(str(eg.WINING_W))
+
 
 with open('p.txt', 'w') as file:
-    file.write(json.dumps(list(eg.P)))
+    file.write(str(eg.P))
 
 with open('n.txt', 'w') as file:
     file.write(json.dumps(list(eg.N)))
+

@@ -6,11 +6,11 @@ import time
 
 
 class Clobber_1d(object):
-
-    winning_black_positions = set()
-    winning_white_positions = set()
+    winning_black_positions = dict()
+    winning_white_positions = dict()
     n_positions = set()
-    p_positions = set()
+    p_positions = dict()
+
     # Board is stored in 1-d array of EMPTY, BLACK, WHITE
 
     player_positions = set()
@@ -230,11 +230,20 @@ class Clobber_1d(object):
                     else:
                         totalMoves = len(moves_subgame)
                         if totalMoves > 0:
-                            iswinning = current_game in winning_boards
+                            depth_L = winning_boards.get(current_game)
+                            depth_p = self.p_positions.get(current_game)
+                            iswinning = depth_L is not None
                             islosing = current_game in losing_boards
-                            isP = current_game in self.p_positions
+                            isP = depth_p is not None
                             isN = current_game in self.n_positions
-                            games[current_game] = (moves_subgame, totalMoves, iswinning, islosing, isP, isN)
+                            if iswinning:
+                                sortKey = -depth_L
+                            elif isP:
+                                sortKey = -depth_p
+                            else:
+                                sortKey = totalMoves
+
+                            games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isP, isN)
 
                     current_game = ""
                     inverse_game = ""
@@ -248,13 +257,20 @@ class Clobber_1d(object):
             else:
                 totalMoves = len(moves_subgame)
                 if totalMoves > 0:
-                    iswinning = current_game in winning_boards
+                    depth_L = winning_boards.get(current_game)
+                    depth_p = self.p_positions.get(current_game)
+                    iswinning = depth_L is not None
                     islosing = current_game in losing_boards
-                    isP = current_game in self.p_positions
+                    isP = depth_p is not None
                     isN = current_game in self.n_positions
-                    games[current_game] = (moves_subgame, totalMoves, iswinning, islosing, isP, isN)
+                    if iswinning:
+                        sortKey = -depth_L
+                    elif isP:
+                        sortKey = -depth_p
+                    else:
+                        sortKey = totalMoves
+                    games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isP, isN)
 
         allMoves = sorted(games.values(), key=lambda x: x[1], reverse=True)
 
         return allMoves
-
