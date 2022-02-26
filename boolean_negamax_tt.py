@@ -14,6 +14,8 @@ class PlayClobber:
 
     out_of_time = False
 
+    max_depth = 0
+
     def __init__(self):
         self.PROVEN_WIN = 10000
         self.PROVEN_LOSS = -10000
@@ -31,6 +33,9 @@ class PlayClobber:
         if (time.time() - start_time) > timeout:
             self.out_of_time = True
             return None
+
+        #if depth > self.max_depth:
+        #    self.max_depth = depth
 
         boardHash = state.getBoardHash()
 
@@ -178,3 +183,6 @@ class PlayClobber:
             return self.PROVEN_LOSS, None, len(self.nodes_visited)
 
         return self.UNKNOWN, None, len(self.nodes_visited)
+
+    def getMaxDepth(self):
+        return self.max_depth
