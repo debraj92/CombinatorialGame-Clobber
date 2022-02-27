@@ -202,6 +202,10 @@ class Clobber_1d(object):
         opp = self.opp_color()
         last = len(self.board) - 1
         positions = self.player_positions
+        flips = 0
+        runningColor = None
+        flip_left_side = 0
+        flip_right_side = 0
         if not isfirstPlayer:
             positions = self.opponent_positions
 
@@ -214,6 +218,14 @@ class Clobber_1d(object):
 
         for i, p in enumerate(self.board):
             if self.board[i] != EMPTY:
+                if flips <= 2:
+                    if runningColor is None or runningColor != self.board[i]:
+                        flips += 1
+                        runningColor = self.board[i]
+                    if flips == 1:
+                        flip_left_side += 1
+                    elif flips == 2:
+                        flip_right_side += 1
                 current_game += str(self.board[i])
                 inverse_game += str(BW - self.board[i])
                 if i in positions:
@@ -222,12 +234,13 @@ class Clobber_1d(object):
                     if i < last and self.board[i + 1] == opp:
                         moves_subgame.add((i, i + 1))
             else:
+                isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
                 if len(current_game) > 0:
                     if current_game in games:
                         games.pop(current_game)
                     elif inverse_game in games:
                         games.pop(inverse_game)
-                    else:
+                    elif not isZero:
                         totalMoves = len(moves_subgame)
                         if totalMoves > 0:
                             depth_L = winning_boards.get(current_game)
@@ -248,13 +261,18 @@ class Clobber_1d(object):
                     current_game = ""
                     inverse_game = ""
                     moves_subgame = set()
+                    flips = 0
+                    runningColor = None
+                    flip_left_side = 0
+                    flip_right_side = 0
 
+        isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
         if len(current_game) > 0:
             if current_game in games:
                 games.pop(current_game)
             elif inverse_game in games:
                 games.pop(inverse_game)
-            else:
+            elif not isZero:
                 totalMoves = len(moves_subgame)
                 if totalMoves > 0:
                     depth_L = winning_boards.get(current_game)
