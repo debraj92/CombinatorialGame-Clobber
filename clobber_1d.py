@@ -244,21 +244,18 @@ class Clobber_1d(object):
                         games.pop(reversed_inverse_game)
                     elif not isZero:
                         totalMoves = len(moves_subgame)
-                        if totalMoves > 0:
+                        if totalMoves > 0 and current_game not in self.p_positions:
                             depth_L = winning_boards.get(current_game)
-                            depth_p = self.p_positions.get(current_game)
                             iswinning = depth_L is not None
                             islosing = current_game in losing_boards
-                            isP = depth_p is not None
                             isN = current_game in self.n_positions
+
                             if iswinning:
                                 sortKey = -depth_L
-                            elif isP:
-                                sortKey = -depth_p
                             else:
                                 sortKey = totalMoves
 
-                            games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isP, isN)
+                            games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
 
                     current_game = ""
                     inverse_game = ""
@@ -279,20 +276,18 @@ class Clobber_1d(object):
                 games.pop(reversed_inverse_game)
             elif not isZero:
                 totalMoves = len(moves_subgame)
-                if totalMoves > 0:
+                if totalMoves > 0 and current_game not in self.p_positions:
                     depth_L = winning_boards.get(current_game)
-                    depth_p = self.p_positions.get(current_game)
                     iswinning = depth_L is not None
                     islosing = current_game in losing_boards
-                    isP = depth_p is not None
                     isN = current_game in self.n_positions
+
                     if iswinning:
                         sortKey = -depth_L
-                    elif isP:
-                        sortKey = -depth_p
                     else:
                         sortKey = totalMoves
-                    games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isP, isN)
+
+                    games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
 
         allMoves = sorted(games.values(), key=lambda x: x[1], reverse=True)
 
