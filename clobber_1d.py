@@ -60,8 +60,6 @@ class Clobber_1d(object):
             self.hash_table.append(random_values)
 
     def __init__(self, start_position, first_player=WHITE, HashSeed=None):
-        # we take either a board size for standard "BWBW...",
-        # or a custom start string such as "BWEEWWB"
         self.first_player = first_player
         self.setOpponentPlayer()
         if type(start_position) == int:
@@ -197,6 +195,7 @@ class Clobber_1d(object):
         moves_subgame = set()
         current_game = ""
         inverse_game = ""
+        reversed_inverse_game = ""
 
         isfirstPlayer = self.toPlay == self.first_player
         opp = self.opp_color()
@@ -228,6 +227,7 @@ class Clobber_1d(object):
                         flip_right_side += 1
                 current_game += str(self.board[i])
                 inverse_game += str(BW - self.board[i])
+                reversed_inverse_game = str(BW - self.board[i]) + reversed_inverse_game
                 if i in positions:
                     if i > 0 and self.board[i - 1] == opp:
                         moves_subgame.add((i, i - 1))
@@ -236,10 +236,12 @@ class Clobber_1d(object):
             else:
                 isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
                 if len(current_game) > 0:
-                    if current_game in games:
+                    if (current_game == "12" or current_game == "21") and current_game in games:
                         games.pop(current_game)
                     elif inverse_game in games:
                         games.pop(inverse_game)
+                    elif reversed_inverse_game in games:
+                        games.pop(reversed_inverse_game)
                     elif not isZero:
                         totalMoves = len(moves_subgame)
                         if totalMoves > 0:
@@ -260,6 +262,7 @@ class Clobber_1d(object):
 
                     current_game = ""
                     inverse_game = ""
+                    reversed_inverse_game = ""
                     moves_subgame = set()
                     flips = 0
                     runningColor = None
@@ -268,10 +271,12 @@ class Clobber_1d(object):
 
         isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
         if len(current_game) > 0:
-            if current_game in games:
+            if (current_game == "12" or current_game == "21") and current_game in games:
                 games.pop(current_game)
             elif inverse_game in games:
                 games.pop(inverse_game)
+            elif reversed_inverse_game in games:
+                games.pop(reversed_inverse_game)
             elif not isZero:
                 totalMoves = len(moves_subgame)
                 if totalMoves > 0:
