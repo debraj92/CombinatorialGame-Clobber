@@ -1,9 +1,16 @@
 import random
+
+from SubgameCache import clobberSubgames
 from game_basics import EMPTY, BLACK, WHITE, isEmptyBlackWhite, opponent
 import time
 
 
 class Clobber_1d(object):
+    winning_black_positions = dict()
+    winning_white_positions = dict()
+    n_positions = set()
+    p_positions = dict()
+
     # Board is stored in 1-d array of EMPTY, BLACK, WHITE
 
     player_positions = set()
@@ -33,6 +40,12 @@ class Clobber_1d(object):
             s += char_map[p]
         return s
 
+    def isCurrentPlayerWhite(self):
+        return self.toPlay == WHITE
+
+    def isCurrentPlayerBlack(self):
+        return self.toPlay == BLACK
+
     def updatePositions(self):
         for i, p in enumerate(self.board):
             if p == self.first_player:
@@ -53,8 +66,6 @@ class Clobber_1d(object):
             self.hash_table.append(random_values)
 
     def __init__(self, start_position, first_player=WHITE, HashSeed=None):
-        # we take either a board size for standard "BWBW...",
-        # or a custom start string such as "BWEEWWB"
         self.first_player = first_player
         self.setOpponentPlayer()
         if type(start_position) == int:
@@ -71,6 +82,12 @@ class Clobber_1d(object):
         self.PROVEN_WIN = 10000
         self.PROVEN_LOSS = -10000
         self.UNKNOWN = -5
+
+        gameCache = clobberSubgames()
+        self.winning_black_positions = gameCache.winning_black_positions
+        self.winning_white_positions = gameCache.winning_white_positions
+        self.p_positions = gameCache.p_positions
+        self.n_positions = gameCache.n_positions
 
     def __hash__(self):
         return self.getBoardHash()
@@ -160,23 +177,6 @@ class Clobber_1d(object):
         else:
             return self.PROVEN_LOSS
 
-    def computeLegalMoves(self):
-        isfirstPlayer = self.toPlay == self.first_player
-        moves = set()
-        opp = self.opp_color()
-        last = len(self.board) - 1
-        positions = self.player_positions
-        if not isfirstPlayer:
-            positions = self.opponent_positions
-
-        for position in positions:
-            if position > 0 and self.board[position - 1] == opp:
-                moves.add((position, position - 1))
-            if position < last and self.board[position + 1] == opp:
-                moves.add((position, position + 1))
-
-        return moves
-
     def printPositions(self):
         print("Players in ", self.player_positions)
         print("Opponents in ", self.opponent_positions)
@@ -193,3 +193,108 @@ class Clobber_1d(object):
 
         self.board_hash_value = zobristHashValue
         return self.board_hash_value
+
+    def computePrunedMovesFromSubgames(self):
+
+        games = dict()
+        BW = BLACK + WHITE
+        moves_subgame = set()
+        current_game = ""
+        inverse_game = ""
+        reversed_inverse_game = ""
+
+        isfirstPlayer = self.toPlay == self.first_player
+        opp = self.opp_color()
+        last = len(self.board) - 1
+        positions = self.player_positions
+        flips = 0
+        runningColor = None
+        flip_left_side = 0
+        flip_right_side = 0
+        if not isfirstPlayer:
+            positions = self.opponent_positions
+
+        if self.toPlay == BLACK:
+            winning_boards = self.winning_black_positions
+            losing_boards = self.winning_white_positions
+        else:
+            winning_boards = self.winning_white_positions
+            losing_boards = self.winning_black_positions
+
+        for i, p in enumerate(self.board):
+            if self.board[i] != EMPTY:
+                if flips <= 2:
+                    if runningColor is None or runningColor != self.board[i]:
+                        flips += 1
+                        runningColor = self.board[i]
+                    if flips == 1:
+                        flip_left_side += 1
+                    elif flips == 2:
+                        flip_right_side += 1
+                current_game += str(self.board[i])
+                inverse_game += str(BW - self.board[i])
+                reversed_inverse_game = str(BW - self.board[i]) + reversed_inverse_game
+                if i in positions:
+                    if i > 0 and self.board[i - 1] == opp:
+                        moves_subgame.add((i, i - 1))
+                    if i < last and self.board[i + 1] == opp:
+                        moves_subgame.add((i, i + 1))
+            else:
+                isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
+                if len(current_game) > 0:
+                    if (current_game == "12" or current_game == "21") and current_game in games:
+                        games.pop(current_game)
+                    elif inverse_game in games:
+                        games.pop(inverse_game)
+                    elif reversed_inverse_game in games:
+                        games.pop(reversed_inverse_game)
+                    elif not isZero:
+                        totalMoves = len(moves_subgame)
+                        if totalMoves > 0 and current_game not in self.p_positions:
+                            depth_L = winning_boards.get(current_game)
+                            iswinning = depth_L is not None
+                            islosing = current_game in losing_boards
+                            isN = current_game in self.n_positions
+
+                            if iswinning:
+                                sortKey = -depth_L
+                            else:
+                                sortKey = totalMoves
+
+                            games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
+
+                    current_game = ""
+                    inverse_game = ""
+                    reversed_inverse_game = ""
+                    moves_subgame = set()
+                    flips = 0
+                    runningColor = None
+                    flip_left_side = 0
+                    flip_right_side = 0
+
+        isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
+        if len(current_game) > 0:
+            if (current_game == "12" or current_game == "21") and current_game in games:
+                games.pop(current_game)
+            elif inverse_game in games:
+                games.pop(inverse_game)
+            elif reversed_inverse_game in games:
+                games.pop(reversed_inverse_game)
+            elif not isZero:
+                totalMoves = len(moves_subgame)
+                if totalMoves > 0 and current_game not in self.p_positions:
+                    depth_L = winning_boards.get(current_game)
+                    iswinning = depth_L is not None
+                    islosing = current_game in losing_boards
+                    isN = current_game in self.n_positions
+
+                    if iswinning:
+                        sortKey = -depth_L
+                    else:
+                        sortKey = totalMoves
+
+                    games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
+
+        allMoves = sorted(games.values(), key=lambda x: x[1], reverse=True)
+
+        return allMoves

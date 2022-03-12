@@ -49,7 +49,7 @@ if __name__ == "__main__":
     # Inputs
     board = sys.argv[1]
     first_player = sys.argv[2]
-    timeout = int(sys.argv[3])
+    timeout = float(sys.argv[3])
     # Start timer
     start = time.time()
     # Setup
