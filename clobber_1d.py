@@ -40,6 +40,12 @@ class Clobber_1d(object):
             s += char_map[p]
         return s
 
+    def isCurrentPlayerWhite(self):
+        return self.toPlay == WHITE
+
+    def isCurrentPlayerBlack(self):
+        return self.toPlay == BLACK
+
     def updatePositions(self):
         for i, p in enumerate(self.board):
             if p == self.first_player:
