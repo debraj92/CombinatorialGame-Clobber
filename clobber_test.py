@@ -61,20 +61,10 @@ class clobberInstanceTests(unittest.TestCase):
         h2 = clobber.getBoardHash()
         self.assertEqual(h1, h2)
 
-    def test8(self):
-        clobber = Clobber_1d("BWBWWB.BWBWWB", WHITE)
-        moves = clobber.computePrunedMovesFromSubgames()
-        assert len(moves) == 0
-
     def test9(self):
         clobber = Clobber_1d("BWBWWB.WBWBBW", WHITE)
         moves = clobber.computePrunedMovesFromSubgames()
         assert len(moves) == 0
-
-    def test10(self):
-        clobber = Clobber_1d("BWBWWB.WBWBBW.BBBB.WWW.BW.BW.BWWB", WHITE)
-        moves = clobber.computePrunedMovesFromSubgames()
-        assert moves[0][0] == {(31, 32), (30, 29)}
 
 
 
