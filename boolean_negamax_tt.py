@@ -25,9 +25,6 @@ class PlayClobber:
         self.INFINITY = 10000
         self.winningMove = ()
 
-    def negate(self, advantage):
-        advantage *= -1
-
     def cnnMoveOrdering(self, legalMoves):
         moves = []
         for move_set, _, _, _, _, in legalMoves:
@@ -107,9 +104,6 @@ class PlayClobber:
 
         self.nodes_visited.add(boardHash)
 
-        isStateProvenLoss = True
-        opponentWinStates = set()
-
         for move_set, _, _, _, _, in legalMoves:
             for nextMove in move_set:
                 savedHash = state.play(nextMove)
@@ -117,18 +111,13 @@ class PlayClobber:
 
                 if nextStateHash not in self.proven_lost_states:
                     # Next State Win or unknown
-                    outcome = self.negamaxClobber1d(
+                    self.negamaxClobber1d(
                         state, -beta, -alpha, depth + 1, start_time, timeout
                     )
+
                     if self.out_of_time:
                         return None
-                    else:
-                        advantage_heuristic = -outcome
                     state.undoMove(nextMove, savedHash)
-                    if advantage_heuristic == -self.INFINITY:
-                        isNextStateWin = True
-                    else:
-                        isNextStateWin = False
                 else:
                     # LOSE for next player
                     state.undoMove(nextMove, savedHash)
@@ -149,30 +138,12 @@ class PlayClobber:
                         self.winningMove = nextMove
                     return self.INFINITY
 
-                elif not isNextStateWin:
-                    isStateProvenLoss = False
-
-                elif isStateProvenLoss:
-                    opponentWinStates.add(nextStateHash)
-
-                # Advantage Heuristic ensures risky game positions are de-prioritized.
-                # Alpha Beta on heuristic values
-
-                if advantage_heuristic > alpha:
-                    alpha = advantage_heuristic
-
-                if advantage_heuristic >= beta:
-                    return beta
-
                 """ END OF LOOP """
 
-        if isStateProvenLoss:
-            self.proven_lost_states.add(boardHash)
-            if boardHash in self.moves_:
-                self.moves_.pop(boardHash)
-            return -self.INFINITY
-
-        return alpha
+        self.proven_lost_states.add(boardHash)
+        if boardHash in self.moves_:
+            self.moves_.pop(boardHash)
+        return -self.INFINITY
 
     def negamaxClobberGamePlay(self, state, start_time, timeout=300):
         self.out_of_time = False
