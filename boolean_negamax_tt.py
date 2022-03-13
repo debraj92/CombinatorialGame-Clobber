@@ -28,13 +28,51 @@ class PlayClobber:
     def negate(self, advantage):
         advantage *= -1
 
+    def cnnMoveOrdering(self, legalMoves):
+        moves = []
+        for move_set, _, _, _, _, in legalMoves:
+            for nextMove in move_set:
+                moves.append(nextMove)
+
+    def handleProcessingSubgames(self, legalMoves, boardHash):
+        l_class = True
+        r_class = True
+        countN = 0
+        countL = 0
+        for move_set, _, win, lose, isN in legalMoves:
+            l_class = l_class and win and not lose
+            if l_class:
+                countL += 1
+
+            r_class = r_class and not win and lose
+
+            if isN:
+                countN += 1
+
+        if len(legalMoves) > 0 and l_class:
+            self.proven_win_states.add(boardHash)
+            return self.INFINITY
+        if len(legalMoves) > 0 and r_class:
+            self.proven_lost_states.add(boardHash)
+            return -self.INFINITY
+
+        if len(legalMoves) == 1 and countN == 1:
+            self.proven_win_states.add(boardHash)
+            return self.INFINITY
+
+        if countN == 1 and countL + countN == len(legalMoves):
+            self.proven_win_states.add(boardHash)
+            return self.INFINITY
+
+        return 0
+
     def negamaxClobber1d(self, state, alpha, beta, depth, start_time, timeout):
 
         if (time.time() - start_time) > timeout:
             self.out_of_time = True
             return None
 
-        #if depth > self.max_depth:
+        # if depth > self.max_depth:
         #    self.max_depth = depth
 
         boardHash = state.getBoardHash()
@@ -47,6 +85,16 @@ class PlayClobber:
 
         if boardHash not in self.moves_:
             legalMoves = state.computePrunedMovesFromSubgames()
+            if len(legalMoves) == 0:
+                self.proven_lost_states.add(boardHash)
+                return -self.INFINITY
+
+            if depth != 0:
+                # Play the first move anyway (because we need the winning move)
+                result = self.handleProcessingSubgames(legalMoves, boardHash)
+                if abs(result) == self.INFINITY:
+                    return result
+
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
@@ -54,51 +102,13 @@ class PlayClobber:
         isEndOfGame = len(legalMoves) == 0
 
         if isEndOfGame:
-            outcome = state.staticallyEvaluateForToPlay(isEndOfGame)
-            if outcome == self.PROVEN_WIN:
-                self.proven_win_states.add(boardHash)
-                return self.INFINITY
-            elif outcome == self.PROVEN_LOSS:
-                self.proven_lost_states.add(boardHash)
-                return -self.INFINITY
-
-            return 0
+            self.proven_lost_states.add(boardHash)
+            return -self.INFINITY
 
         self.nodes_visited.add(boardHash)
 
         isStateProvenLoss = True
         opponentWinStates = set()
-
-        if depth != 0:
-            # Play the first move anyway (because we need the winning move)
-            l_class = True
-            r_class = True
-            countN = 0
-            countL = 0
-            for move_set, _, win, lose, isN in legalMoves:
-                l_class = l_class and win and not lose
-                if l_class:
-                    countL += 1
-
-                r_class = r_class and not win and lose
-
-                if isN:
-                    countN += 1
-
-            if l_class:
-                self.proven_win_states.add(boardHash)
-                return self.INFINITY
-            if r_class:
-                self.proven_lost_states.add(boardHash)
-                return -self.INFINITY
-
-            if len(legalMoves) == 1 and countN == 1:
-                self.proven_win_states.add(boardHash)
-                return self.INFINITY
-
-            if countN == 1 and countL + countN == len(legalMoves):
-                self.proven_win_states.add(boardHash)
-                return self.INFINITY
 
         for move_set, _, _, _, _, in legalMoves:
             for nextMove in move_set:
