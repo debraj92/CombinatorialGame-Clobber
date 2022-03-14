@@ -27,7 +27,7 @@ class cnn:
 
     label = None
 
-    EPOCHS = 30
+    EPOCHS = 50
 
     sample_size = 0  # number of samples in train set
     time_steps = 0  # number of features in train set
@@ -99,18 +99,20 @@ class cnn:
 
     def cnnModel(self):
         model = Sequential()
-        model.add(Conv1D(filters=16, kernel_size=7, strides=1, activation='relu', input_shape=(self.time_steps, self.input_dimension)))  # 1
+        model.add(Conv1D(filters=16, kernel_size=7, strides=1, activation='relu',
+                         input_shape=(self.time_steps, self.input_dimension)))  # 1
         model.add(Dropout(0.25))
         model.add(MaxPool1D(pool_size=2, strides=2))
         model.add(Conv1D(filters=8, kernel_size=5, activation='relu', strides=1))  # 2
         model.add(MaxPool1D(pool_size=2, strides=2))
         model.add(Conv1D(filters=4, kernel_size=3, activation='relu', strides=1))  # 3
-        #model.add(AveragePooling1D(pool_size=2, strides=2))
+        model.add(MaxPool1D(pool_size=2, strides=2))
+        model.add(Conv1D(filters=2, kernel_size=1, activation='relu', strides=1))  # 3
         model.add(MaxPool1D(pool_size=2, strides=2))
         model.add(Flatten())
         model.add(Dense(32, activation='relu', name="Dense_1"))
+        model.add(Dropout(0.25))
         model.add(Dense(self.input_dimension, activation='softmax', name="Dense_2"))
-        #model.compile('adam', loss='binary_crossentropy', metrics=['accuracy'])
         model.compile('adam', loss='mse', metrics=['accuracy'])
         return model
 
