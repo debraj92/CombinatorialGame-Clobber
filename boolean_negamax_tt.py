@@ -1,4 +1,6 @@
 import time
+import keras.models
+import numpy as np
 
 
 class PlayClobber:
@@ -24,12 +26,39 @@ class PlayClobber:
         self.DISPROVEN = 1
         self.INFINITY = 10000
         self.winningMove = ()
+        self.model_black = keras.models.load_model('clobber-black-cnn.h5')
+        self.model_white = keras.models.load_model('clobber-white-cnn.h5')
 
-    def cnnMoveOrdering(self, legalMoves):
+    def evaluateMove(self, state, move, model):
+        state.applyMoveForFeatureEvaluation(move)
+        X = state.board_features
+        X = np.reshape(X, (1, 40, 2))
+        prediction = model.predict(X)
+        if prediction[0][0] < 0.2 and prediction[0][1] > 0.8:
+            # current player wins
+            sortKey = 1
+        elif prediction[0][0] > 0.8 and prediction[0][1] < 0.2:
+            # current player loses
+            sortKey = -1
+        else:
+            sortKey = 0
+
+        state.undoMoveFromFeatureEvaluation(move)
+        return sortKey
+
+    def cnnMoveOrdering(self, state, legalMoves):
         moves = []
+        if state.isCurrentPlayerWhite():
+            model = self.model_black
+        else:
+            model = self.model_white
         for move_set, _, _, _, _, in legalMoves:
             for nextMove in move_set:
-                moves.append(nextMove)
+                prediction = self.evaluateMove(state, nextMove, model)
+                moves.append((nextMove, prediction))
+
+        moves = sorted(moves, key=lambda x: x[1])
+        return moves
 
     def handleProcessingSubgames(self, legalMoves, boardHash):
         l_class = True
@@ -92,6 +121,7 @@ class PlayClobber:
                 if abs(result) == self.INFINITY:
                     return result
 
+            legalMoves = self.cnnMoveOrdering(state, legalMoves)
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
@@ -104,41 +134,40 @@ class PlayClobber:
 
         self.nodes_visited.add(boardHash)
 
-        for move_set, _, _, _, _, in legalMoves:
-            for nextMove in move_set:
-                savedHash = state.play(nextMove)
-                nextStateHash = state.getBoardHash()
+        for nextMove, _ in legalMoves:
+            savedHash = state.play(nextMove)
+            nextStateHash = state.getBoardHash()
 
-                if nextStateHash not in self.proven_lost_states:
-                    # Next State Win or unknown
-                    self.negamaxClobber1d(
-                        state, -beta, -alpha, depth + 1, start_time, timeout
-                    )
+            if nextStateHash not in self.proven_lost_states:
+                # Next State Win or unknown
+                self.negamaxClobber1d(
+                    state, -beta, -alpha, depth + 1, start_time, timeout
+                )
 
-                    if self.out_of_time:
-                        return None
-                    state.undoMove(nextMove, savedHash)
-                else:
-                    # LOSE for next player
-                    state.undoMove(nextMove, savedHash)
-                    self.proven_win_states.add(boardHash)
-                    self.proven_lost_states.remove(nextStateHash)
-                    if boardHash in self.moves_:
-                        self.moves_.pop(boardHash)
-                    if depth == 0:
-                        self.winningMove = nextMove
-                    return self.INFINITY
+                if self.out_of_time:
+                    return None
+                state.undoMove(nextMove, savedHash)
+            else:
+                # LOSE for next player
+                state.undoMove(nextMove, savedHash)
+                self.proven_win_states.add(boardHash)
+                self.proven_lost_states.remove(nextStateHash)
+                if boardHash in self.moves_:
+                    self.moves_.pop(boardHash)
+                if depth == 0:
+                    self.winningMove = nextMove
+                return self.INFINITY
 
-                if nextStateHash in self.proven_lost_states:
-                    self.proven_win_states.add(boardHash)
-                    self.proven_lost_states.remove(nextStateHash)
-                    if boardHash in self.moves_:
-                        self.moves_.pop(boardHash)
-                    if depth == 0:
-                        self.winningMove = nextMove
-                    return self.INFINITY
+            if nextStateHash in self.proven_lost_states:
+                self.proven_win_states.add(boardHash)
+                self.proven_lost_states.remove(nextStateHash)
+                if boardHash in self.moves_:
+                    self.moves_.pop(boardHash)
+                if depth == 0:
+                    self.winningMove = nextMove
+                return self.INFINITY
 
-                """ END OF LOOP """
+            """ END OF LOOP """
 
         self.proven_lost_states.add(boardHash)
         if boardHash in self.moves_:

@@ -4,8 +4,13 @@ from SubgameCache import clobberSubgames
 from game_basics import EMPTY, BLACK, WHITE, isEmptyBlackWhite, opponent
 import time
 
+import keras.models
+import numpy as np
+
 
 class Clobber_1d(object):
+    board_features = None
+    MAX_LENGTH_FEATURES = 40
     winning_black_positions = dict()
     winning_white_positions = dict()
     n_positions = set()
@@ -18,18 +23,21 @@ class Clobber_1d(object):
     first_player = WHITE
     opponent_player = BLACK
 
-    @classmethod
-    def standard_board(cls, size):
-        pairs = (size + 1) // 2
-        board = [BLACK, WHITE] * pairs
-        return board[:size]
-
-    @classmethod
-    def custom_board(cls, start_position):  # str of B, W, E or .
+    def custom_board(self, start_position):  # str of B, W, E or .
         color_map = {"B": BLACK, "W": WHITE, "E": EMPTY, ".": EMPTY}
         board = []
         for c in start_position:
             board.append(color_map[c])
+            if c == "B":
+                self.board_features = np.append(self.board_features, [[0, 1]], axis=0)
+            elif c == "W":
+                self.board_features = np.append(self.board_features, [[1, 0]], axis=0)
+            else:
+                self.board_features = np.append(self.board_features, [[0, 0]], axis=0)
+
+        for i in range(self.MAX_LENGTH_FEATURES - len(start_position)):
+            self.board_features = np.append(self.board_features, [[0, 0]], axis=0)
+
         return board
 
     @classmethod
@@ -68,10 +76,8 @@ class Clobber_1d(object):
     def __init__(self, start_position, first_player=WHITE, HashSeed=None):
         self.first_player = first_player
         self.setOpponentPlayer()
-        if type(start_position) == int:
-            self.init_board = Clobber_1d.standard_board(start_position)
-        else:
-            self.init_board = Clobber_1d.custom_board(start_position)
+        self.board_features = np.empty(shape=[0, 2])
+        self.board = self.custom_board(start_position)
         self.resetGame(first_player)
         self.updatePositions()
         self.hash_table = []
@@ -108,7 +114,6 @@ class Clobber_1d(object):
         return self.toPlay == self.opponent_player
 
     def resetGame(self, first_player):
-        self.board = self.init_board
         self.toPlay = first_player
         self.opponent_positions = set()
         self.player_positions = set()
@@ -131,6 +136,17 @@ class Clobber_1d(object):
         self.board_hash_value ^= self.hash_table[to][self.toPlay]
         return savedHashValue
 
+    def updateFeatureAtIndex(self, idx, feature):
+        if feature == EMPTY:
+            self.board_features[idx][0] = 0
+            self.board_features[idx][1] = 0
+        elif feature == BLACK:
+            self.board_features[idx][0] = 0
+            self.board_features[idx][1] = 1
+        else:
+            self.board_features[idx][0] = 1
+            self.board_features[idx][1] = 0
+
     def play(self, move):
         src, to = move
         if self.toPlay == self.first_player:
@@ -143,6 +159,11 @@ class Clobber_1d(object):
             self.player_positions.remove(to)
         self.board[src] = EMPTY
         self.board[to] = self.toPlay
+
+        # update feature vector
+        self.updateFeatureAtIndex(src, EMPTY)
+        self.updateFeatureAtIndex(to, self.toPlay)
+
         savedHashValue = self.updateBoardHashValue(move)
         self.switchToPlay()
         return savedHashValue
@@ -152,6 +173,11 @@ class Clobber_1d(object):
         src, to = move
         self.board[to] = self.opp_color()
         self.board[src] = self.toPlay
+
+        # update feature vector
+        self.updateFeatureAtIndex(to, self.opp_color())
+        self.updateFeatureAtIndex(src, self.toPlay)
+
         self.board_hash_value = savedHashValue
         if self.toPlay == self.first_player:
             self.player_positions.add(src)
@@ -161,6 +187,16 @@ class Clobber_1d(object):
             self.opponent_positions.add(src)
             self.opponent_positions.remove(to)
             self.player_positions.add(to)
+
+    def applyMoveForFeatureEvaluation(self, move):
+        src, to = move
+        self.updateFeatureAtIndex(src, EMPTY)
+        self.updateFeatureAtIndex(to, self.toPlay)
+
+    def undoMoveFromFeatureEvaluation(self, move):
+        src, to = move
+        self.updateFeatureAtIndex(to, self.opp_color())
+        self.updateFeatureAtIndex(src, self.toPlay)
 
     def winner(self, isEndOfGame):
         if isEndOfGame:
@@ -295,6 +331,4 @@ class Clobber_1d(object):
 
                     games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
 
-        allMoves = sorted(games.values(), key=lambda x: x[1], reverse=True)
-
-        return allMoves
+        return games.values()
