@@ -1,4 +1,5 @@
 import unittest
+import time
 
 from boolean_negamax_tt import PlayClobber
 from clobber_1d import Clobber_1d
@@ -21,8 +22,13 @@ class clobberInstanceTests(unittest.TestCase):
 
     def test2(self):
         clobber = Clobber_1d("BWBW", BLACK)
-        moves = clobber.computePrunedMovesFromSubgames()[0][0]
-        self.assertTrue((0, 1) in moves)
+        moves = []
+        legalmoves = clobber.computePrunedMovesFromSubgames()
+        for move_set, _, _, _, _, in legalmoves:
+            for nextMove in move_set:
+                moves.append(nextMove)
+
+        self.assertTrue(moves[0] == (0, 1)) #black wins
         self.assertTrue((2, 1) in moves)
         self.assertTrue((2, 3) in moves)
         self.assertEqual(3, len(moves))
@@ -31,7 +37,12 @@ class clobberInstanceTests(unittest.TestCase):
         clobber = Clobber_1d("BWBW", BLACK)
         clobber.play((0, 1))
         clobber.play((3, 2))
-        moves = clobber.computePrunedMovesFromSubgames()[0][0]
+        moves = []
+        legalmoves = clobber.computePrunedMovesFromSubgames()
+        for move_set, _, _, _, _, in legalmoves:
+            for nextMove in move_set:
+                moves.append(nextMove)
+
         self.assertEqual(len(moves), 1)
         self.assertTrue((1, 2) in moves)
 
@@ -71,28 +82,6 @@ class clobberInstanceTests(unittest.TestCase):
         moves = clobber.computePrunedMovesFromSubgames()
         assert len(moves) == 0
 
-    def test10(self):
-        clobber = Clobber_1d("BWBWBWBW.WBWBWBB", BLACK, 1)
-        play = PlayClobber()
-        value = play.evaluateMove(clobber, (0, 1), play.model_white)
-        assert value == -1
-
-        clobber = Clobber_1d("BBWW", BLACK, 1)
-        play = PlayClobber()
-        value = play.evaluateMove(clobber, (1, 2), play.model_white)
-        assert value == 1
-
-    def test11(self):
-        clobber = Clobber_1d("BWBWBWBWBWBWBWBWBW", BLACK, 1)
-        play = PlayClobber()
-        value = play.evaluateMove(clobber, (0, 1), play.model_white)
-        assert value == -1
-
-        clobber = Clobber_1d("BWBWBW", BLACK, 1)
-        play = PlayClobber()
-        value = play.evaluateMove(clobber, (0, 1), play.model_white)
-        assert value == 1
-
     def test12(self):
         clobber = Clobber_1d("BBWW", BLACK, 1)
         clobber.applyMoveForFeatureEvaluation((1, 2))
@@ -128,8 +117,9 @@ class clobberInstanceTests(unittest.TestCase):
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
-        assert prediction[0][1] > 0.8
-        assert prediction[0][0] < 0.2
+        print(prediction)
+        assert prediction[0][1] > 0.7
+        assert prediction[0][0] < 0.3
 
     def testBlackModel_2(self):
         model_black = keras.models.load_model('clobber-black-cnn.h5')
@@ -138,8 +128,8 @@ class clobberInstanceTests(unittest.TestCase):
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
-        assert prediction[0][1] < 0.2
-        assert prediction[0][0] > 0.8
+        assert prediction[0][1] < 0.3
+        assert prediction[0][0] > 0.7
 
     def testWhiteModel_1(self):
         model_black = keras.models.load_model('clobber-white-cnn.h5')
@@ -147,8 +137,8 @@ class clobberInstanceTests(unittest.TestCase):
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
-        assert prediction[0][1] > 0.8
-        assert prediction[0][0] < 0.2
+        assert prediction[0][1] > 0.7
+        assert prediction[0][0] < 0.3
 
     def testWhiteModel_2(self):
         model_black = keras.models.load_model('clobber-white-cnn.h5')
@@ -156,11 +146,23 @@ class clobberInstanceTests(unittest.TestCase):
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
-        assert prediction[0][1] < 0.2
-        assert prediction[0][0] > 0.8
+        assert prediction[0][1] < 0.3
+        assert prediction[0][0] > 0.7
 
     def testchecktf(self):
         label = np.array([1, 0, 1, 1, 0])
         label = tf.keras.utils.to_categorical(label, num_classes=2)
         print(label)
         print(label.shape)
+
+    def testprediction(self):
+        model_black = keras.models.load_model('final-models/m2/clobber-black-cnn.h5')
+        clobber = Clobber_1d("WBWBWBWWWBWBW", BLACK, 1)  # Exp : White loses(0) [1 0]
+        X = clobber.board_features
+        start = time.time()
+        X = np.reshape(X, (1, 40, 2))
+        prediction = model_black.predict(X)
+        print(prediction)
+        end = time.time()
+        d = end - start
+        print("time taken ", d)

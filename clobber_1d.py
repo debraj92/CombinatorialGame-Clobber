@@ -29,14 +29,14 @@ class Clobber_1d(object):
         for c in start_position:
             board.append(color_map[c])
             if c == "B":
-                self.board_features = np.append(self.board_features, [[0, 1]], axis=0)
+                self.board_features = np.append(self.board_features, np.array([[0, 1]], dtype=np.float32), axis=0)
             elif c == "W":
-                self.board_features = np.append(self.board_features, [[1, 0]], axis=0)
+                self.board_features = np.append(self.board_features, np.array([[1, 0]], dtype=np.float32), axis=0)
             else:
-                self.board_features = np.append(self.board_features, [[0, 0]], axis=0)
+                self.board_features = np.append(self.board_features, np.array([[0, 0]], dtype=np.float32), axis=0)
 
         for i in range(self.MAX_LENGTH_FEATURES - len(start_position)):
-            self.board_features = np.append(self.board_features, [[0, 0]], axis=0)
+            self.board_features = np.append(self.board_features, np.array([[0, 0]], dtype=np.float32), axis=0)
 
         return board
 
@@ -76,7 +76,7 @@ class Clobber_1d(object):
     def __init__(self, start_position, first_player=WHITE, HashSeed=None):
         self.first_player = first_player
         self.setOpponentPlayer()
-        self.board_features = np.empty(shape=[0, 2])
+        self.board_features = np.empty(shape=[0, 2], dtype=np.float32)
         self.board = self.custom_board(start_position)
         self.resetGame(first_player)
         self.updatePositions()

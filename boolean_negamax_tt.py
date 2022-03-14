@@ -34,10 +34,10 @@ class PlayClobber:
         X = state.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model.predict(X)
-        if prediction[0][0] < 0.2 and prediction[0][1] > 0.8:
+        if prediction[0][0] < 0.3 and prediction[0][1] > 0.7:
             # current player wins
             sortKey = 1
-        elif prediction[0][0] > 0.8 and prediction[0][1] < 0.2:
+        elif prediction[0][0] > 0.7 and prediction[0][1] < 0.3:
             # current player loses
             sortKey = -1
         else:
