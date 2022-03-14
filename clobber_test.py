@@ -1,6 +1,11 @@
 import unittest
+
+from boolean_negamax_tt import PlayClobber
 from clobber_1d import Clobber_1d
 from game_basics import EMPTY, BLACK, WHITE, isEmptyBlackWhite, opponent
+import keras.models
+import numpy as np
+import tensorflow as tf
 
 
 class clobberInstanceTests(unittest.TestCase):
@@ -66,6 +71,96 @@ class clobberInstanceTests(unittest.TestCase):
         moves = clobber.computePrunedMovesFromSubgames()
         assert len(moves) == 0
 
+    def test10(self):
+        clobber = Clobber_1d("BWBWBWBW.WBWBWBB", BLACK, 1)
+        play = PlayClobber()
+        value = play.evaluateMove(clobber, (0, 1), play.model_white)
+        assert value == -1
 
+        clobber = Clobber_1d("BBWW", BLACK, 1)
+        play = PlayClobber()
+        value = play.evaluateMove(clobber, (1, 2), play.model_white)
+        assert value == 1
 
+    def test11(self):
+        clobber = Clobber_1d("BWBWBWBWBWBWBWBWBW", BLACK, 1)
+        play = PlayClobber()
+        value = play.evaluateMove(clobber, (0, 1), play.model_white)
+        assert value == -1
 
+        clobber = Clobber_1d("BWBWBW", BLACK, 1)
+        play = PlayClobber()
+        value = play.evaluateMove(clobber, (0, 1), play.model_white)
+        assert value == 1
+
+    def test12(self):
+        clobber = Clobber_1d("BBWW", BLACK, 1)
+        clobber.applyMoveForFeatureEvaluation((1, 2))
+        boardString = ""
+        for i in range(len(clobber.board_features)):
+            if clobber.board_features[i][0] == 0 and clobber.board_features[i][1] == 1:
+                boardString += "B"
+            elif clobber.board_features[i][0] == 1 and clobber.board_features[i][1] == 0:
+                boardString += "W"
+            else:
+                boardString += "."
+
+        assert boardString == "B.BW...................................."
+
+    def test13(self):
+        clobber = Clobber_1d("BWBW", WHITE, 1)
+        clobber.applyMoveForFeatureEvaluation((1, 0))
+        boardString = ""
+        for i in range(len(clobber.board_features)):
+            if clobber.board_features[i][0] == 0 and clobber.board_features[i][1] == 1:
+                boardString += "B"
+            elif clobber.board_features[i][0] == 1 and clobber.board_features[i][1] == 0:
+                boardString += "W"
+            else:
+                boardString += "."
+
+        assert boardString == "W.BW...................................."
+
+    def testBlackModel_1(self):
+        model_black = keras.models.load_model('clobber-black-cnn.h5')
+        clobber = Clobber_1d("BWB", BLACK, 1)  # Exp : Black wins(1) [0 1]
+                                                # we are evaluating from black's perspective.
+        X = clobber.board_features
+        X = np.reshape(X, (1, 40, 2))
+        prediction = model_black.predict(X)
+        assert prediction[0][1] > 0.8
+        assert prediction[0][0] < 0.2
+
+    def testBlackModel_2(self):
+        model_black = keras.models.load_model('clobber-black-cnn.h5')
+        clobber = Clobber_1d("BBWW", BLACK, 1)  # Exp : Black loses(0) [1 0], ignore player -
+                                                # we are evaluating from black's perspective.
+        X = clobber.board_features
+        X = np.reshape(X, (1, 40, 2))
+        prediction = model_black.predict(X)
+        assert prediction[0][1] < 0.2
+        assert prediction[0][0] > 0.8
+
+    def testWhiteModel_1(self):
+        model_black = keras.models.load_model('clobber-white-cnn.h5')
+        clobber = Clobber_1d("WB", BLACK, 1)  # Exp : White wins(1) [0 1]
+        X = clobber.board_features
+        X = np.reshape(X, (1, 40, 2))
+        prediction = model_black.predict(X)
+        assert prediction[0][1] > 0.8
+        assert prediction[0][0] < 0.2
+
+    def testWhiteModel_2(self):
+        model_black = keras.models.load_model('clobber-white-cnn.h5')
+        clobber = Clobber_1d("BBWW", BLACK, 1)  # Exp : White loses(0) [1 0]
+        X = clobber.board_features
+        X = np.reshape(X, (1, 40, 2))
+        prediction = model_black.predict(X)
+        assert prediction[0][1] < 0.2
+        assert prediction[0][0] > 0.8
+
+    def testchecktf(self):
+        label = np.array([1, 0, 1, 1, 0])
+        label = tf.keras.utils.to_categorical(label, num_classes=2)
+        print(label)
+        print(label.shape)

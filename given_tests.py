@@ -210,7 +210,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWB", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 5000)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -536,6 +536,16 @@ class clobberPlayTests(unittest.TestCase):
     def test39(self):
         start = time.time()
         clobber = Clobber_1d("BW.WBW.BBWW", BLACK)
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
+            clobber, start, 150
+        )
+        end = time.time()
+        print("Total time ", end - start)
+        self.assertEqual(outcome, PROVEN_LOSS)
+
+    def test40(self):
+        start = time.time()
+        clobber = Clobber_1d("W.B.WW.", BLACK)
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(
             clobber, start, 150
         )
