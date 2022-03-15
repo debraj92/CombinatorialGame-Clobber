@@ -23,7 +23,7 @@ class clobberInstanceTests(unittest.TestCase):
     def test2(self):
         clobber = Clobber_1d("BWBW", BLACK)
         moves = []
-        legalmoves = clobber.computePrunedMovesFromSubgames()
+        legalmoves = clobber.computePrunedMovesFromSubgames(0)
         for move_set, _, _, _, _, in legalmoves:
             for nextMove in move_set:
                 moves.append(nextMove)
@@ -38,7 +38,7 @@ class clobberInstanceTests(unittest.TestCase):
         clobber.play((0, 1))
         clobber.play((3, 2))
         moves = []
-        legalmoves = clobber.computePrunedMovesFromSubgames()
+        legalmoves = clobber.computePrunedMovesFromSubgames(0)
         for move_set, _, _, _, _, in legalmoves:
             for nextMove in move_set:
                 moves.append(nextMove)
@@ -79,11 +79,12 @@ class clobberInstanceTests(unittest.TestCase):
 
     def test9(self):
         clobber = Clobber_1d("BWBWWB.WBWBBW", WHITE)
-        moves = clobber.computePrunedMovesFromSubgames()
+        moves = clobber.computePrunedMovesFromSubgames(0)
         assert len(moves) == 0
 
     def test12(self):
         clobber = Clobber_1d("BBWW", BLACK, 1)
+        clobber.computePrunedMovesFromSubgames(0)
         clobber.applyMoveForFeatureEvaluation((1, 2))
         boardString = ""
         for i in range(len(clobber.board_features)):
@@ -98,6 +99,7 @@ class clobberInstanceTests(unittest.TestCase):
 
     def test13(self):
         clobber = Clobber_1d("BWBW", WHITE, 1)
+        clobber.computePrunedMovesFromSubgames(0)
         clobber.applyMoveForFeatureEvaluation((1, 0))
         boardString = ""
         for i in range(len(clobber.board_features)):
@@ -114,6 +116,7 @@ class clobberInstanceTests(unittest.TestCase):
         model_black = keras.models.load_model('clobber-black-cnn.h5')
         clobber = Clobber_1d("BWB", BLACK, 1)  # Exp : Black wins(1) [0 1]
                                                 # we are evaluating from black's perspective.
+        clobber.computePrunedMovesFromSubgames(0)
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
@@ -125,6 +128,7 @@ class clobberInstanceTests(unittest.TestCase):
         model_black = keras.models.load_model('clobber-black-cnn.h5')
         clobber = Clobber_1d("BBWW", BLACK, 1)  # Exp : Black loses(0) [1 0], ignore player -
                                                 # we are evaluating from black's perspective.
+        clobber.computePrunedMovesFromSubgames(0)
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
@@ -134,6 +138,7 @@ class clobberInstanceTests(unittest.TestCase):
     def testWhiteModel_1(self):
         model_black = keras.models.load_model('clobber-white-cnn.h5')
         clobber = Clobber_1d("WB", BLACK, 1)  # Exp : White wins(1) [0 1]
+        clobber.computePrunedMovesFromSubgames(0)
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
@@ -143,6 +148,7 @@ class clobberInstanceTests(unittest.TestCase):
     def testWhiteModel_2(self):
         model_black = keras.models.load_model('clobber-white-cnn.h5')
         clobber = Clobber_1d("BBWW", BLACK, 1)  # Exp : White loses(0) [1 0]
+        clobber.computePrunedMovesFromSubgames(0)
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
@@ -156,8 +162,9 @@ class clobberInstanceTests(unittest.TestCase):
         print(label.shape)
 
     def testprediction(self):
-        model_black = keras.models.load_model('final-models/m2/clobber-black-cnn.h5')
-        clobber = Clobber_1d("WBWBWBWWWBWBW", BLACK, 1)  # Exp : White loses(0) [1 0]
+        model_black = keras.models.load_model('./clobber-black-cnn.h5')
+        clobber = Clobber_1d("BBW", BLACK, 1)  # Exp : White loses(0) [1 0]
+        clobber.computePrunedMovesFromSubgames(0)
         X = clobber.board_features
         start = time.time()
         X = np.reshape(X, (1, 40, 2))

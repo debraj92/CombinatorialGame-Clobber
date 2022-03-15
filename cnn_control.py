@@ -6,7 +6,8 @@ from game_basics import EMPTY, BLACK, WHITE
 from search_basics import INFINITY, PROVEN_WIN, PROVEN_LOSS, UNKNOWN
 
 import numpy as np
-from keras.layers import Conv1D, Dense, MaxPooling1D, Flatten, BatchNormalization, ReLU, MaxPool1D, Dense, Dropout, AveragePooling1D, GlobalAveragePooling1D
+from keras.layers import Conv1D, Dense, MaxPooling1D, Flatten, BatchNormalization, ReLU, MaxPool1D, Dense, Dropout, \
+    AveragePooling1D, GlobalAveragePooling1D
 from keras.models import Sequential
 import keras.utils
 from matplotlib import pyplot as plt
@@ -14,8 +15,6 @@ import tensorflow as tf
 
 
 class cnn:
-    training_samples_positive = set()
-    training_samples_negative = set()
 
     elements = [".", "B", "W"]
 
@@ -27,12 +26,12 @@ class cnn:
 
     label = None
 
-    EPOCHS = 50
+    EPOCHS = 60
 
     sample_size = 0  # number of samples in train set
     time_steps = 0  # number of features in train set
     input_dimension = 2  # each feature is represented by 1 number
-    #[batch_size, time_steps, input_dimension] ---> [sample_size, time_steps, input_dimension]
+    # [batch_size, time_steps, input_dimension] ---> [sample_size, time_steps, input_dimension]
 
     train_data_reshaped = None
 
@@ -81,7 +80,7 @@ class cnn:
                 train_data.append(self.convertGameStringToInputVector(game))
 
             count += 1
-            complete = int(count/total * 100)
+            complete = int(count / total * 100)
 
             if complete % 10 == 0:
                 print("Completed %", complete)
@@ -92,6 +91,22 @@ class cnn:
         print(self.label.shape)
         return
 
+    def serialize_train_data(self, fname_train, fname_label):
+        with open(fname_train, 'wb') as f:
+            np.save(f, self.train_data)
+
+        with open(fname_label, 'wb') as f:
+            np.save(f, self.label)
+
+    def read_train_data(self, fname_train, fname_label):
+        with open(fname_train, 'rb') as f:
+            self.train_data = np.load(f)
+            print(self.train_data)
+
+        with open(fname_label, 'rb') as f:
+            self.label = np.load(f)
+            print(self.label)
+
     def reshapeInput(self):
         self.sample_size = self.train_data.shape[0]
         self.time_steps = self.train_data.shape[1]
@@ -99,35 +114,37 @@ class cnn:
 
     def cnnModel(self):
         model = Sequential()
-        model.add(Conv1D(filters=16, kernel_size=7, strides=1, activation='relu',
+        model.add(Conv1D(filters=32, kernel_size=7, strides=1, activation='relu',
                          input_shape=(self.time_steps, self.input_dimension)))  # 1
         model.add(Dropout(0.25))
         model.add(MaxPool1D(pool_size=2, strides=2))
-        model.add(Conv1D(filters=8, kernel_size=5, activation='relu', strides=1))  # 2
+        model.add(Conv1D(filters=16, kernel_size=5, activation='relu', strides=1))  # 2
         model.add(MaxPool1D(pool_size=2, strides=2))
-        model.add(Conv1D(filters=4, kernel_size=3, activation='relu', strides=1))  # 3
-        model.add(MaxPool1D(pool_size=2, strides=2))
-        model.add(Conv1D(filters=2, kernel_size=1, activation='relu', strides=1))  # 3
+        model.add(Conv1D(filters=8, kernel_size=3, activation='relu', strides=1))  # 3
         model.add(MaxPool1D(pool_size=2, strides=2))
         model.add(Flatten())
-        model.add(Dense(32, activation='relu', name="Dense_1"))
-        model.add(Dropout(0.25))
+        model.add(Dense(64, activation='relu', name="Dense_1"))
         model.add(Dense(self.input_dimension, activation='softmax', name="Dense_2"))
         model.compile('adam', loss='mse', metrics=['accuracy'])
         return model
 
 
 model = cnn()
-model.generateGameCombinations("", 0, 11)
+model.generateGameCombinations("", 0, 12)
 print("Games of size 11 generated")
 model.createTrainingData()
+
 print(model.train_data.shape)  # number of games X number of features
 print(model.label.shape)  # number of games
 model.reshapeInput()
+
+model.serialize_train_data('train_data_samples-black.npy', 'labels-black.npy')
+# model.read_train_data('train_data_samples-black.npy', 'labels-black.npy')
+
 model_conv1D = model.cnnModel()
 
 history = model_conv1D.fit(model.train_data, model.label, epochs=model.EPOCHS,
-                    validation_split=0.2, verbose=1)
+                           validation_split=0.2, verbose=1)
 
 model_conv1D.save("clobber-black-cnn.h5")
 
@@ -153,16 +170,24 @@ plt.show()
 print("Training Complete for black")
 # REPEAT SAME CODE FOR WHITE
 
+model_temp = model
+
 model = cnn()
+model.games_for_training = model_temp.games_for_training
+
 model.createTrainingData(WHITE)
 print(model.train_data.shape)  # number of games X number of features
 print(model.label.shape)  # number of games
 model.reshapeInput()
+
+model.serialize_train_data('train_data_samples-white.npy', 'labels-white.npy')
+# model.read_train_data('train_data_samples-black.npy', 'labels-black.npy')
+
 model_conv1D = model.cnnModel()
 
 history = model_conv1D.fit(model.train_data, model.label, epochs=model.EPOCHS,
-                    validation_split=0.2, verbose=1)
-#plot_history(history)
+                           validation_split=0.2, verbose=1)
+# plot_history(history)
 model_conv1D.save("clobber-white-cnn.h5")
 
 plt.figure(1)

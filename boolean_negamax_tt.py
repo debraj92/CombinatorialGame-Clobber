@@ -1,6 +1,7 @@
 import time
 import keras.models
 import numpy as np
+import tensorflow as tf
 
 
 class PlayClobber:
@@ -26,14 +27,39 @@ class PlayClobber:
         self.DISPROVEN = 1
         self.INFINITY = 10000
         self.winningMove = ()
-        self.model_black = keras.models.load_model('clobber-black-cnn.h5')
-        self.model_white = keras.models.load_model('clobber-white-cnn.h5')
+        self.model_black_interpreter = self.modelInferenceInit("./clobber-black-cnn.tflite")
+        self.model_white_interpreter = self.modelInferenceInit("./clobber-white-cnn.tflite")
 
-    def evaluateMove(self, state, move, model):
+    def modelInferenceInit(self, model_path):
+        interpreter = tf.lite.Interpreter(model_path=model_path)
+        interpreter.allocate_tensors()
+        return interpreter
+
+    def blackModelInference(self, X):
+        input_details = self.model_black_interpreter.get_input_details()
+        output_details = self.model_black_interpreter.get_output_details()
+
+        self.model_black_interpreter.set_tensor(input_details[0]['index'], X)
+        self.model_black_interpreter.invoke()
+        return self.model_black_interpreter.get_tensor(output_details[0]['index'])
+
+    def whiteModelInference(self, X):
+        input_details = self.model_white_interpreter.get_input_details()
+        output_details = self.model_white_interpreter.get_output_details()
+
+        self.model_white_interpreter.set_tensor(input_details[0]['index'], X)
+        self.model_white_interpreter.invoke()
+        return self.model_white_interpreter.get_tensor(output_details[0]['index'])
+
+    def evaluateMove(self, state, move):
         state.applyMoveForFeatureEvaluation(move)
         X = state.board_features
         X = np.reshape(X, (1, 40, 2))
-        prediction = model.predict(X)
+        if state.isCurrentPlayerWhite():
+            prediction = self.blackModelInference(X)
+        else:
+            prediction = self.whiteModelInference(X)
+
         if prediction[0][0] < 0.3 and prediction[0][1] > 0.7:
             # current player wins
             sortKey = 1
@@ -46,16 +72,22 @@ class PlayClobber:
         state.undoMoveFromFeatureEvaluation(move)
         return sortKey
 
-    def cnnMoveOrdering(self, state, legalMoves):
+    def cnnMoveOrdering(self, state, legalMoves, depth):
         moves = []
-        if state.isCurrentPlayerWhite():
-            model = self.model_black
-        else:
-            model = self.model_white
-        for move_set, _, _, _, _, in legalMoves:
+        for move_set, _, win, lose, _ in legalMoves:
             for nextMove in move_set:
-                prediction = self.evaluateMove(state, nextMove, model)
-                moves.append((nextMove, prediction))
+
+                if state.isCNNMoveOrderingActive(depth):
+                    prediction = self.evaluateMove(state, nextMove)
+                    moves.append((nextMove, prediction))
+                else:
+
+                    if win and not lose:
+                        moves.append((nextMove, 1))
+                    elif not win and lose:
+                        moves.append((nextMove, -1))
+                    else:
+                        moves.append((nextMove, 1/len(move_set)))
 
         moves = sorted(moves, key=lambda x: x[1])
         return moves
@@ -110,7 +142,7 @@ class PlayClobber:
             return -self.INFINITY
 
         if boardHash not in self.moves_:
-            legalMoves = state.computePrunedMovesFromSubgames()
+            legalMoves = state.computePrunedMovesFromSubgames(depth)
             if len(legalMoves) == 0:
                 self.proven_lost_states.add(boardHash)
                 return -self.INFINITY
@@ -121,7 +153,7 @@ class PlayClobber:
                 if abs(result) == self.INFINITY:
                     return result
 
-            legalMoves = self.cnnMoveOrdering(state, legalMoves)
+            legalMoves = self.cnnMoveOrdering(state, legalMoves, depth)
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
@@ -182,9 +214,9 @@ class PlayClobber:
         self.moves_ = dict()
         self.nodes_visited = set()
         boardHash = state.getBoardHash()
-        depth = 1000
+        depth = 0
         outcome = self.negamaxClobber1d(
-            state, -self.INFINITY, self.INFINITY, 0, start_time, timeout
+            state, -self.INFINITY, self.INFINITY, depth, start_time, timeout
         )
         if outcome == self.INFINITY:
             return self.PROVEN_WIN, self.winningMove, len(self.nodes_visited)
