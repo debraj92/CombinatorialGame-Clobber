@@ -28,15 +28,6 @@ class Clobber_1d(object):
         board = []
         for c in start_position:
             board.append(color_map[c])
-            if c == "B":
-                self.board_features = np.append(self.board_features, np.array([[0, 1]], dtype=np.float32), axis=0)
-            elif c == "W":
-                self.board_features = np.append(self.board_features, np.array([[1, 0]], dtype=np.float32), axis=0)
-            else:
-                self.board_features = np.append(self.board_features, np.array([[0, 0]], dtype=np.float32), axis=0)
-
-        for i in range(self.MAX_LENGTH_FEATURES - len(start_position)):
-            self.board_features = np.append(self.board_features, np.array([[0, 0]], dtype=np.float32), axis=0)
 
         return board
 
@@ -76,7 +67,7 @@ class Clobber_1d(object):
     def __init__(self, start_position, first_player=WHITE, HashSeed=None):
         self.first_player = first_player
         self.setOpponentPlayer()
-        self.board_features = np.empty(shape=[0, 2], dtype=np.float32)
+        self.board_features = None
         self.board = self.custom_board(start_position)
         self.resetGame(first_player)
         self.updatePositions()
@@ -126,6 +117,9 @@ class Clobber_1d(object):
     def switchToPlay(self):
         self.toPlay = self.opp_color()
 
+    def sizeOfRemainingGame(self, depth):
+        return len(self.board) - depth
+
     def updateBoardHashValue(self, move):
         savedHashValue = self.board_hash_value
         src, to = move
@@ -160,10 +154,6 @@ class Clobber_1d(object):
         self.board[src] = EMPTY
         self.board[to] = self.toPlay
 
-        # update feature vector
-        self.updateFeatureAtIndex(src, EMPTY)
-        self.updateFeatureAtIndex(to, self.toPlay)
-
         savedHashValue = self.updateBoardHashValue(move)
         self.switchToPlay()
         return savedHashValue
@@ -173,10 +163,6 @@ class Clobber_1d(object):
         src, to = move
         self.board[to] = self.opp_color()
         self.board[src] = self.toPlay
-
-        # update feature vector
-        self.updateFeatureAtIndex(to, self.opp_color())
-        self.updateFeatureAtIndex(src, self.toPlay)
 
         self.board_hash_value = savedHashValue
         if self.toPlay == self.first_player:
@@ -230,7 +216,10 @@ class Clobber_1d(object):
         self.board_hash_value = zobristHashValue
         return self.board_hash_value
 
-    def computePrunedMovesFromSubgames(self):
+    def isCNNMoveOrderingActive(self, depth):
+        return self.sizeOfRemainingGame(depth) <= 14
+
+    def computePrunedMovesFromSubgames(self, depth):
 
         games = dict()
         BW = BLACK + WHITE
@@ -238,11 +227,14 @@ class Clobber_1d(object):
         current_game = ""
         inverse_game = ""
         reversed_inverse_game = ""
-
         isfirstPlayer = self.toPlay == self.first_player
         opp = self.opp_color()
         last = len(self.board) - 1
         positions = self.player_positions
+        isCnnActive = self.isCNNMoveOrderingActive(depth)
+        if isCnnActive:
+            self.board_features = np.empty(shape=[0, 2], dtype=np.float32)
+
         flips = 0
         runningColor = None
         flip_left_side = 0
@@ -259,6 +251,12 @@ class Clobber_1d(object):
 
         for i, p in enumerate(self.board):
             if self.board[i] != EMPTY:
+                if isCnnActive:
+                    if self.board[i] == 1:
+                        self.board_features = np.append(self.board_features, np.array([[0, 1]], dtype=np.float32), axis=0)
+                    else:
+                        self.board_features = np.append(self.board_features, np.array([[1, 0]], dtype=np.float32), axis=0)
+
                 if flips <= 2:
                     if runningColor is None or runningColor != self.board[i]:
                         flips += 1
@@ -276,6 +274,10 @@ class Clobber_1d(object):
                     if i < last and self.board[i + 1] == opp:
                         moves_subgame.add((i, i + 1))
             else:
+
+                if isCnnActive and i > 0 and self.board[i-1] != EMPTY:
+                    self.board_features = np.append(self.board_features, np.array([[0, 0]], dtype=np.float32), axis=0)
+
                 isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
                 if len(current_game) > 0:
                     if (current_game == "12" or current_game == "21") and current_game in games:
@@ -330,5 +332,9 @@ class Clobber_1d(object):
                         sortKey = totalMoves
 
                     games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
+
+        if isCnnActive:
+            for i in range(self.MAX_LENGTH_FEATURES - len(self.board_features)):
+                self.board_features = np.append(self.board_features, np.array([[0, 0]], dtype=np.float32), axis=0)
 
         return games.values()
