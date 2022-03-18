@@ -60,10 +60,10 @@ class PlayClobber:
         else:
             prediction = self.whiteModelInference(X)
 
-        if prediction[0][0] < 0.3 and prediction[0][1] > 0.7:
+        if prediction[0][0] < 0.2 and prediction[0][1] > 0.8:
             # current player wins
             sortKey = 1
-        elif prediction[0][0] > 0.7 and prediction[0][1] < 0.3:
+        elif prediction[0][0] > 0.8 and prediction[0][1] < 0.2:
             # current player loses
             sortKey = -1
         else:
@@ -83,9 +83,9 @@ class PlayClobber:
                 else:
 
                     if win and not lose:
-                        moves.append((nextMove, 1))
+                        moves.append((nextMove, 0.6))
                     elif not win and lose:
-                        moves.append((nextMove, -1))
+                        moves.append((nextMove, -0.6))
                     else:
                         moves.append((nextMove, 1/len(move_set)))
 
