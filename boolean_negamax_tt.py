@@ -62,10 +62,10 @@ class PlayClobber:
 
         if prediction[0][0] < 0.2 and prediction[0][1] > 0.8:
             # current player wins
-            sortKey = 1
+            sortKey = prediction[0][1]
         elif prediction[0][0] > 0.8 and prediction[0][1] < 0.2:
             # current player loses
-            sortKey = -1
+            sortKey = -prediction[0][0]
         else:
             sortKey = 0
 
