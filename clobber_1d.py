@@ -334,7 +334,9 @@ class Clobber_1d(object):
                     games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
 
         if isCnnActive:
-            for i in range(self.MAX_LENGTH_FEATURES - len(self.board_features)):
-                self.board_features = np.append(self.board_features, np.array([[0, 0]], dtype=np.float32), axis=0)
+
+            empty_positions_to_add = self.MAX_LENGTH_FEATURES - len(self.board_features)
+            dots = np.full((empty_positions_to_add, 2), [[0, 0]], dtype=np.float32)
+            self.board_features = np.concatenate((self.board_features, dots), axis=0)
 
         return games.values()
