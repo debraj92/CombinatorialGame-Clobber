@@ -72,24 +72,28 @@ class PlayClobber:
         state.undoMoveFromFeatureEvaluation(move)
         return sortKey
 
-    def cnnMoveOrdering(self, state, legalMoves, depth):
+    def cnnMoveOrdering(self, state, legalMoves, previous_score, depth):
         moves = []
+        cnnOrdering = state.isCNNMoveOrderingActive(depth, previous_score)
         for move_set, _, win, lose, _ in legalMoves:
             for nextMove in move_set:
-
-                if state.isCNNMoveOrderingActive(depth):
-                    prediction = self.evaluateMove(state, nextMove)
-                    moves.append((nextMove, prediction))
-                else:
-
-                    if win and not lose:
-                        moves.append((nextMove, 0.6))
-                    elif not win and lose:
-                        moves.append((nextMove, -0.6))
+                if previous_score > -0.9:
+                    if cnnOrdering:
+                        prediction = self.evaluateMove(state, nextMove)
+                        moves.append((nextMove, prediction))
                     else:
-                        moves.append((nextMove, 1/len(move_set)))
 
-        moves = sorted(moves, key=lambda x: x[1])
+                        if win and not lose:
+                            moves.append((nextMove, 0.6))
+                        elif not win and lose:
+                            moves.append((nextMove, -0.6))
+                        else:
+                            moves.append((nextMove, 1/len(move_set)))
+                else:
+                    moves.append((nextMove, 1))
+
+        if previous_score > -0.9:
+            moves = sorted(moves, key=lambda x: x[1])
         return moves
 
     def handleProcessingSubgames(self, legalMoves, boardHash):
@@ -124,7 +128,7 @@ class PlayClobber:
 
         return 0
 
-    def negamaxClobber1d(self, state, alpha, beta, depth, start_time, timeout):
+    def negamaxClobber1d(self, state, previous_score, depth, start_time, timeout):
 
         if (time.time() - start_time) > timeout:
             self.out_of_time = True
@@ -142,7 +146,7 @@ class PlayClobber:
             return -self.INFINITY
 
         if boardHash not in self.moves_:
-            legalMoves = state.computePrunedMovesFromSubgames(depth)
+            legalMoves = state.computePrunedMovesFromSubgames(previous_score, depth)
             if len(legalMoves) == 0:
                 self.proven_lost_states.add(boardHash)
                 return -self.INFINITY
@@ -153,7 +157,7 @@ class PlayClobber:
                 if abs(result) == self.INFINITY:
                     return result
 
-            legalMoves = self.cnnMoveOrdering(state, legalMoves, depth)
+            legalMoves = self.cnnMoveOrdering(state, legalMoves, previous_score, depth)
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
@@ -166,14 +170,14 @@ class PlayClobber:
 
         self.nodes_visited.add(boardHash)
 
-        for nextMove, _ in legalMoves:
+        for nextMove, score in legalMoves:
             savedHash = state.play(nextMove)
             nextStateHash = state.getBoardHash()
 
             if nextStateHash not in self.proven_lost_states:
                 # Next State Win or unknown
                 self.negamaxClobber1d(
-                    state, -beta, -alpha, depth + 1, start_time, timeout
+                    state, score, depth + 1, start_time, timeout
                 )
 
                 if self.out_of_time:
@@ -216,7 +220,7 @@ class PlayClobber:
         boardHash = state.getBoardHash()
         depth = 0
         outcome = self.negamaxClobber1d(
-            state, -self.INFINITY, self.INFINITY, depth, start_time, timeout
+            state, 0, depth, start_time, timeout
         )
         if outcome == self.INFINITY:
             return self.PROVEN_WIN, self.winningMove, len(self.nodes_visited)
