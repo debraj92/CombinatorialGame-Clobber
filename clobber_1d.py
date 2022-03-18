@@ -217,7 +217,7 @@ class Clobber_1d(object):
         return self.board_hash_value
 
     def isCNNMoveOrderingActive(self, depth, score):
-        return (score > -0.9) and self.sizeOfRemainingGame(depth) <= 17
+        return (score > -0.7) and self.sizeOfRemainingGame(depth) <= 17
 
     def computePrunedMovesFromSubgames(self, previous_score, depth):
 
