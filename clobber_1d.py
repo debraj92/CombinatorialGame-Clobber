@@ -117,9 +117,6 @@ class Clobber_1d(object):
     def switchToPlay(self):
         self.toPlay = self.opp_color()
 
-    def sizeOfRemainingGame(self, depth):
-        return len(self.board) - depth
-
     def updateBoardHashValue(self, move):
         savedHashValue = self.board_hash_value
         src, to = move
@@ -216,10 +213,11 @@ class Clobber_1d(object):
         self.board_hash_value = zobristHashValue
         return self.board_hash_value
 
-    def isCNNMoveOrderingActive(self, depth, score):
-        return (score > -0.7) and self.sizeOfRemainingGame(depth) <= 17
+    def isCNNMoveOrderingActive(self, score):
+        countOfPieces = len(self.player_positions) + len(self.opponent_positions)
+        return (score > -0.7) and countOfPieces <= 1 #2
 
-    def computePrunedMovesFromSubgames(self, previous_score, depth):
+    def computePrunedMovesFromSubgames(self, isCnnActive):
 
         games = dict()
         BW = BLACK + WHITE
@@ -231,7 +229,6 @@ class Clobber_1d(object):
         opp = self.opp_color()
         last = len(self.board) - 1
         positions = self.player_positions
-        isCnnActive = self.isCNNMoveOrderingActive(depth, previous_score)
         if isCnnActive:
             self.board_features = np.empty(shape=[0, 2], dtype=np.float32)
 
