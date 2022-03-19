@@ -72,9 +72,8 @@ class PlayClobber:
         state.undoMoveFromFeatureEvaluation(move)
         return sortKey
 
-    def cnnMoveOrdering(self, state, legalMoves, previous_score, depth):
+    def cnnMoveOrdering(self, state, legalMoves, previous_score, cnnOrdering):
         moves = []
-        cnnOrdering = state.isCNNMoveOrderingActive(depth, previous_score)
         countWinMoves = 0
         for move_set, _, win, lose, _ in legalMoves:
             for nextMove in move_set:
@@ -83,8 +82,9 @@ class PlayClobber:
                         prediction = self.evaluateMove(state, nextMove)
                         if prediction > 0.7:
                             countWinMoves += 1
-                        if countWinMoves == 2:
                             cnnOrdering = False
+                        #if countWinMoves == 2:
+                        #    cnnOrdering = False
                         moves.append((nextMove, prediction))
                     else:
 
@@ -151,7 +151,8 @@ class PlayClobber:
             return -self.INFINITY
 
         if boardHash not in self.moves_:
-            legalMoves = state.computePrunedMovesFromSubgames(previous_score, depth)
+            cnnActive = state.isCNNMoveOrderingActive(previous_score)
+            legalMoves = state.computePrunedMovesFromSubgames(cnnActive)
             if len(legalMoves) == 0:
                 self.proven_lost_states.add(boardHash)
                 return -self.INFINITY
@@ -162,7 +163,7 @@ class PlayClobber:
                 if abs(result) == self.INFINITY:
                     return result
 
-            legalMoves = self.cnnMoveOrdering(state, legalMoves, previous_score, depth)
+            legalMoves = self.cnnMoveOrdering(state, legalMoves, previous_score, cnnActive)
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
