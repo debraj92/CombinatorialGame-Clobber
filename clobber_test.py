@@ -148,30 +148,12 @@ class clobberInstanceTests(unittest.TestCase):
 
         assert boardString == "W.BW...................................."
 
-    def testBlackModel_1(self):
-        model_black = keras.models.load_model('./final-models/best3/clobber-black-cnn.h5')
-        clobber = Clobber_1d("BWB", BLACK, 1)  # Exp : Black wins(1) [0 1]
-        # we are evaluating from black's perspective.
-        clobber.computePrunedMovesFromSubgames(True)
-        X = clobber.board_features
-        X = np.reshape(X, (1, 40, 2))
-        prediction = model_black.predict(X)
-        print(prediction)
+    def test_model_inference_1(self):
+        prediction = inference_black("BWB")
         assert prediction[0][1] > 0.7
         assert prediction[0][0] < 0.3
 
-    def testBlackModel_2(self):
-        model_black = keras.models.load_model('./final-models/best3/clobber-black-cnn.h5')
-        clobber = Clobber_1d("BBWW", BLACK, 1)  # Exp : Black loses(0) [1 0], ignore player -
-        # we are evaluating from black's perspective.
-        clobber.computePrunedMovesFromSubgames(True)
-        X = clobber.board_features
-        X = np.reshape(X, (1, 40, 2))
-        prediction = model_black.predict(X)
-        assert prediction[0][1] < 0.3
-        assert prediction[0][0] > 0.7
-
-    def test_model_inference_1(self):
+    def test_model_inference_2(self):
 
         prediction = inference_white("WB")
         assert prediction[0][1] < 0.3
@@ -181,7 +163,7 @@ class clobberInstanceTests(unittest.TestCase):
         assert prediction[0][1] > 0.7
         assert prediction[0][0] < 0.3
 
-    def test_model_inference_2(self):
+    def test_model_inference_3(self):
 
         prediction = inference_white("BBWW")
         assert prediction[0][1] < 0.3
@@ -191,7 +173,7 @@ class clobberInstanceTests(unittest.TestCase):
         assert prediction[0][1] < 0.3
         assert prediction[0][0] > 0.7
 
-    def test_model_inference_3(self):
+    def test_model_inference_4(self):
 
         prediction = inference_white("BBW")
         assert prediction[0][1] < 0.3
