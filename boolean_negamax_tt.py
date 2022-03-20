@@ -27,10 +27,8 @@ class PlayClobber:
         self.DISPROVEN = 1
         self.INFINITY = 10000
         self.winningMove = ()
-        #self.model_black_interpreter = self.modelInferenceInit("./final-models/m9/clobber-black-cnn.tflite")
-        #self.model_white_interpreter = self.modelInferenceInit("./final-models/m9/clobber-white-cnn.tflite")
-        self.model_black_interpreter = self.modelInferenceInit("./final-models/m7/clobber-black-cnn.tflite")
-        self.model_white_interpreter = self.modelInferenceInit("./final-models/m9/clobber-white-cnn.tflite")
+        self.model_black_interpreter = self.modelInferenceInit("./final-models/best3/clobber-black-cnn.tflite")
+        self.model_white_interpreter = self.modelInferenceInit("./final-models/best3/clobber-white-cnn.tflite")
 
     def modelInferenceInit(self, model_path):
         interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -176,6 +174,7 @@ class PlayClobber:
         self.nodes_visited.add(boardHash)
 
         for nextMove, score in legalMoves:
+
             savedHash = state.play(nextMove)
             nextStateHash = state.getBoardHash()
 

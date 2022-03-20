@@ -38,7 +38,7 @@ class cnn:
 
     label = None
 
-    EPOCHS = 50
+    EPOCHS = 40
 
     sample_size = 0  # number of samples in train set
     time_steps = 0  # number of features in train set
@@ -98,13 +98,6 @@ class cnn:
         empty_positions_to_add = self.MAX_LENGTH - len(x)
         dots_suffix = np.full((empty_positions_to_add, 2), [[0, 0]], dtype=np.float32)
         x = np.concatenate((x, dots_suffix), axis=0)
-        '''
-        rand_num = np.random.random(1)[0]
-        if rand_num > 0.5:
-            x = np.concatenate((x, dots), axis=0)
-        else:
-            x = np.concatenate((dots, x), axis=0)
-        '''
         return x
 
     def createTrainingData(self, first_player=BLACK, sparseGame=False):
@@ -185,7 +178,7 @@ class cnn:
         model.add(Flatten())
         model.add(Dense(64, activation='relu', name="Dense_1"))
         model.add(Dense(self.input_dimension, activation='softmax', name="Dense_2"))
-        model.compile('adam', loss='mse', metrics=['accuracy'])
+        model.compile('adam', loss='binary_crossentropy', metrics=[tf.keras.metrics.AUC()])
         return model
 
     def reloadModel(self, type_player=BLACK):
@@ -224,17 +217,7 @@ class cnn_trainer:
 
             model_conv1D = model.cnnModel()
 
-            # checkpoint
-            checkpoint_filepath = './checkpoints/b'
-            model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-                filepath=checkpoint_filepath,
-                save_weights_only=True,
-                monitor='val_accuracy',
-                mode='max',
-                save_best_only=True)
-            # save_freq=5 * model.sample_size)
-
-            history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback],
+            history = model_conv1D.fit(model.train_data, model.label,
                                        epochs=model.EPOCHS,
                                        validation_split=0.2, verbose=1)
 
@@ -242,10 +225,10 @@ class cnn_trainer:
 
             plt.figure(1)
             plt.subplot(211)
-            plt.plot(history.history['accuracy'])
-            plt.plot(history.history['val_accuracy'])
-            plt.title('model accuracy')
-            plt.ylabel('accuracy')
+            plt.plot(history.history['auc'])
+            plt.plot(history.history['val_auc'])
+            plt.title('model auc')
+            plt.ylabel('auc')
             plt.xlabel('epoch')
             plt.legend(['train', 'val'], loc='upper left')
 
@@ -281,16 +264,7 @@ class cnn_trainer:
 
         model_conv1D = model.cnnModel()
 
-        # checkpoint
-        checkpoint_filepath = './checkpoints/w'
-        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_filepath,
-            save_weights_only=True,
-            monitor='val_accuracy',
-            mode='max',
-            save_best_only=True)
-
-        history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback],
+        history = model_conv1D.fit(model.train_data, model.label,
                                    epochs=model.EPOCHS,
                                    validation_split=0.2, verbose=1)
         # plot_history(history)
@@ -298,10 +272,10 @@ class cnn_trainer:
 
         plt.figure(1)
         plt.subplot(211)
-        plt.plot(history.history['accuracy'])
-        plt.plot(history.history['val_accuracy'])
-        plt.title('model accuracy')
-        plt.ylabel('accuracy')
+        plt.plot(history.history['auc_1'])
+        plt.plot(history.history['val_auc_1'])
+        plt.title('model auc')
+        plt.ylabel('auc')
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper left')
 
@@ -330,18 +304,13 @@ class cnn_trainer:
         # black
         model.createTrainingData(BLACK, sparseGame)
         model.reshapeInput()
+
+        model.serialize_train_data('train_data_samples-black.npy', 'labels-black.npy')
+        #model.read_train_data('train_data_samples-black.npy', 'labels-black.npy')
+
         model_conv1D = model.reloadModel()
 
-        # checkpoint
-        checkpoint_filepath = './checkpoints/b/b'
-        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_filepath,
-            save_weights_only=True,
-            monitor='val_accuracy',
-            mode='max',
-            save_best_only=True)
-
-        history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback],
+        history = model_conv1D.fit(model.train_data, model.label,
                                    epochs=model.EPOCHS,
                                    validation_split=0.2, verbose=1)
 
@@ -349,10 +318,10 @@ class cnn_trainer:
 
         plt.figure(1)
         plt.subplot(211)
-        plt.plot(history.history['accuracy'])
-        plt.plot(history.history['val_accuracy'])
-        plt.title('model accuracy')
-        plt.ylabel('accuracy')
+        plt.plot(history.history['auc'])
+        plt.plot(history.history['val_auc'])
+        plt.title('model auc')
+        plt.ylabel('auc')
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper left')
 
@@ -364,7 +333,8 @@ class cnn_trainer:
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper right')
         plt.tight_layout()
-        plt.savefig('performance-black-retrained.png')
+        # plt.show()
+        plt.savefig('performance-black-cnn-retrained.png')
         plt.clf()
         print("Training Complete for black")
 
@@ -376,17 +346,13 @@ class cnn_trainer:
 
         model.createTrainingData(WHITE, sparseGame)
         model.reshapeInput()
-        model_conv1D = model.reloadModel(WHITE)
-        # checkpoint
-        checkpoint_filepath = './checkpoints/w/w'
-        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=checkpoint_filepath,
-            save_weights_only=True,
-            monitor='val_accuracy',
-            mode='max',
-            save_best_only=True)
 
-        history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback],
+        model.serialize_train_data('train_data_samples-white.npy', 'labels-white.npy')
+        #model.read_train_data('train_data_samples-black.npy', 'labels-black.npy')
+
+        model_conv1D = model.reloadModel(WHITE)
+
+        history = model_conv1D.fit(model.train_data, model.label,
                                    epochs=model.EPOCHS,
                                    validation_split=0.2, verbose=1)
 
@@ -394,10 +360,10 @@ class cnn_trainer:
 
         plt.figure(1)
         plt.subplot(211)
-        plt.plot(history.history['accuracy'])
-        plt.plot(history.history['val_accuracy'])
-        plt.title('model accuracy')
-        plt.ylabel('accuracy')
+        plt.plot(history.history['auc_1'])
+        plt.plot(history.history['val_auc_1'])
+        plt.title('model auc')
+        plt.ylabel('auc')
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper left')
 
@@ -409,12 +375,13 @@ class cnn_trainer:
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper right')
         plt.tight_layout()
-        plt.savefig('performance-white-retrained.png')
+        # plt.show()
+        plt.savefig('performance-white-cnn-retrained.png')
         print("Training Complete for white")
 
     def finalizeRetraining(self):
-        shutil.copy("clobber-white-cnn-retrained.h5", "'clobber-white-cnn.h5'")
-        shutil.copy("clobber-black-cnn-retrained.h5", "'clobber-black-cnn.h5'")
+        shutil.copy("clobber-white-cnn-retrained.h5", "clobber-white-cnn.h5")
+        shutil.copy("clobber-black-cnn-retrained.h5", "clobber-black-cnn.h5")
 
     def generateTFLite(self):
         model = cnn()
@@ -435,11 +402,11 @@ class cnn_trainer:
 
 t = cnn_trainer()
 
-# t.createModelFromScratch(18, t.RANDOM_COMBINATION, 400000, True)
+#t.createModelFromScratch(17, t.RANDOM_COMBINATION, 800000, False)
 
 #t.retrainModelWithSample(500000, 26)
 
-#t.retrainModelWithSample(300000, 16, True)
+#t.retrainModelWithSample(600000, 20, True)
 
 t.finalizeRetraining()
 

@@ -24,8 +24,8 @@ def createRandomBoard(size, skipDot):
         elements = [".", "B", "W"]#["B", "W", "."]
     board = ""
     population = [0, 1, 2]
-    #weights = [0.6, 0.2, 0.2]
-    weights = [0.65, 0.18, 0.17]
+    weights = [0.4, 0.3, 0.3]
+    #weights = [0.65, 0.18, 0.17]
     for i in range(size):
         index = choices(population, weights)
         #board += elements[np.random.randint(low=0, high=3)]
@@ -101,7 +101,7 @@ printGames()
 '''
 
 boardSize = 35
-generateGameCombinations(15000, boardSize)
+generateGameCombinations(10000, boardSize)
 printGames()
 #print()
 #games_for_training = compress()
@@ -117,7 +117,9 @@ def inference_black(board):
 
     start = time.time()
     # Load TFLite model and allocate tensors.
-    interpreter = tf.lite.Interpreter(model_path="./final-models/m7/clobber-black-cnn.tflite")
+    #interpreter = tf.lite.Interpreter(model_path="./final-models/m7_b_m9_w/clobber-black-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./clobber-black-cnn.tflite")
+    #interpreter = tf.lite.Interpreter(model_path="./clobber-black-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
     input_details = interpreter.get_input_details()
@@ -137,7 +139,7 @@ if TEST_BLACK:
 
     count_correct = 0
     count_incorrect = 0
-
+    exec_time = 0
     print("Checking accuracy for Black")
     for game in games_for_training:
         #print(game)
@@ -145,9 +147,12 @@ if TEST_BLACK:
         play = PlayClobber()
         test_start = time.time()
         expected_outcome, _, _ = play.negamaxClobberGamePlay(clobber, test_start, 1000)
+        start = time.time()
         #print(expected_outcome)
         predicted_outcome = inference_black(game)
         #print(predicted_outcome)
+        end = time.time()
+        exec_time += end - start
         if expected_outcome == PROVEN_WIN and predicted_outcome[0][1] > 0.7 and predicted_outcome[0][0] < 0.3:
             count_correct += 1
         elif expected_outcome == PROVEN_LOSS and predicted_outcome[0][1] < 0.3 and predicted_outcome[0][0] > 0.7:
@@ -155,8 +160,11 @@ if TEST_BLACK:
         else:
             count_incorrect += 1
 
+
     test_accuracy = 100 * (count_correct / (count_correct + count_incorrect))
     print("Test Accuracy Black ", test_accuracy)
+    avg_exec_time = exec_time / len(games_for_training)
+    print("Average execution time ", avg_exec_time)
 
 
 # white
@@ -171,7 +179,9 @@ def inference_white(board):
 
     start = time.time()
     # Load TFLite model and allocate tensors.
-    interpreter = tf.lite.Interpreter(model_path="./final-models/m7/clobber-white-cnn.tflite")
+    #interpreter = tf.lite.Interpreter(model_path="./final-models/m7_b_m9_w/clobber-white-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./clobber-white-cnn.tflite")
+    #interpreter = tf.lite.Interpreter(model_path="./clobber-white-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
     input_details = interpreter.get_input_details()
@@ -192,7 +202,7 @@ if TEST_WHITE:
 
     count_correct = 0
     count_incorrect = 0
-
+    exec_time = 0
     print("Checking accuracy for White")
     for game in games_for_training:
         #print(game)
@@ -201,7 +211,12 @@ if TEST_WHITE:
         test_start = time.time()
         expected_outcome, _, _ = play.negamaxClobberGamePlay(clobber, test_start, 1000)
 
+        start = time.time()
+        # print(expected_outcome)
         predicted_outcome = inference_white(game)
+        # print(predicted_outcome)
+        end = time.time()
+        exec_time += end - start
         if predicted_outcome is None:
             continue
         if expected_outcome == PROVEN_WIN and predicted_outcome[0][1] > 0.8 and predicted_outcome[0][0] < 0.2:
@@ -213,3 +228,5 @@ if TEST_WHITE:
 
     test_accuracy = 100 * (count_correct / (count_correct + count_incorrect))
     print("Test Accuracy White ", test_accuracy)
+    avg_exec_time = exec_time / len(games_for_training)
+    print("Average execution time ", avg_exec_time)
