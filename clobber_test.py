@@ -197,15 +197,3 @@ class clobberInstanceTests(unittest.TestCase):
         print(label)
         print(label.shape)
 
-    def testprediction(self):
-        model_black = keras.models.load_model('./final-models/best3/clobber-black-cnn.h5')
-        clobber = Clobber_1d("BBW", BLACK, 1)  # Exp : White loses(0) [1 0]
-        clobber.computePrunedMovesFromSubgames(True)
-        X = clobber.board_features
-        start = time.time()
-        X = np.reshape(X, (1, 40, 2))
-        prediction = model_black.predict(X)
-        print(prediction)
-        end = time.time()
-        d = end - start
-        print("time taken ", d)
