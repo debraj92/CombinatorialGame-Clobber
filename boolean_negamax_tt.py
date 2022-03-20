@@ -77,7 +77,6 @@ class PlayClobber:
     def cnnMoveOrdering(self, state, legalMoves, previous_score, cnnOrdering):
         moves = []
         countWinMoves = 0
-        noSort = previous_score <= -0.7
         for move_set, _, win, lose, _ in legalMoves:
             for nextMove in move_set:
                 if cnnOrdering:
