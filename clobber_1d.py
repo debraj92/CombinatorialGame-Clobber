@@ -215,7 +215,7 @@ class Clobber_1d(object):
 
     def isCNNMoveOrderingActive(self, score):
         countOfPieces = len(self.player_positions) + len(self.opponent_positions)
-        return (score > -0.7) and countOfPieces <= 1 #2
+        return (score > -0.7) and countOfPieces <= 17
 
     def computePrunedMovesFromSubgames(self, isCnnActive):
 
@@ -272,7 +272,7 @@ class Clobber_1d(object):
                         moves_subgame.add((i, i + 1))
             else:
 
-                if isCnnActive and i > 0 and self.board[i-1] != EMPTY:
+                if isCnnActive:
                     self.board_features = np.append(self.board_features, np.array([[0, 0]], dtype=np.float32), axis=0)
 
                 isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
@@ -332,7 +332,7 @@ class Clobber_1d(object):
 
         if isCnnActive:
 
-            empty_positions_to_add = self.MAX_LENGTH_FEATURES - len(self.board_features)
+            empty_positions_to_add = self.MAX_LENGTH_FEATURES - len(self.board)
             dots = np.full((empty_positions_to_add, 2), [[0, 0]], dtype=np.float32)
             self.board_features = np.concatenate((self.board_features, dots), axis=0)
 
