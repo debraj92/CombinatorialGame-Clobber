@@ -79,12 +79,12 @@ class clobberInstanceTests(unittest.TestCase):
 
     def test9(self):
         clobber = Clobber_1d("BWBWWB.WBWBBW", WHITE)
-        moves = clobber.computePrunedMovesFromSubgames(0)
+        moves = clobber.computePrunedMovesFromSubgames(True)
         assert len(moves) == 0
 
     def test12(self):
         clobber = Clobber_1d("BBWW", BLACK, 1)
-        clobber.computePrunedMovesFromSubgames(0)
+        clobber.computePrunedMovesFromSubgames(True)
         clobber.applyMoveForFeatureEvaluation((1, 2))
         boardString = ""
         for i in range(len(clobber.board_features)):
@@ -99,7 +99,7 @@ class clobberInstanceTests(unittest.TestCase):
 
     def test13(self):
         clobber = Clobber_1d("BWBW", WHITE, 1)
-        clobber.computePrunedMovesFromSubgames(0)
+        clobber.computePrunedMovesFromSubgames(True)
         clobber.applyMoveForFeatureEvaluation((1, 0))
         boardString = ""
         for i in range(len(clobber.board_features)):
@@ -116,7 +116,7 @@ class clobberInstanceTests(unittest.TestCase):
         model_black = keras.models.load_model('clobber-black-cnn.h5')
         clobber = Clobber_1d("BWB", BLACK, 1)  # Exp : Black wins(1) [0 1]
                                                 # we are evaluating from black's perspective.
-        clobber.computePrunedMovesFromSubgames(0)
+        clobber.computePrunedMovesFromSubgames(True)
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
@@ -128,7 +128,7 @@ class clobberInstanceTests(unittest.TestCase):
         model_black = keras.models.load_model('clobber-black-cnn.h5')
         clobber = Clobber_1d("BBWW", BLACK, 1)  # Exp : Black loses(0) [1 0], ignore player -
                                                 # we are evaluating from black's perspective.
-        clobber.computePrunedMovesFromSubgames(0)
+        clobber.computePrunedMovesFromSubgames(True)
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
@@ -138,7 +138,7 @@ class clobberInstanceTests(unittest.TestCase):
     def testWhiteModel_1(self):
         model_black = keras.models.load_model('clobber-white-cnn.h5')
         clobber = Clobber_1d("WB", BLACK, 1)  # Exp : White wins(1) [0 1]
-        clobber.computePrunedMovesFromSubgames(0)
+        clobber.computePrunedMovesFromSubgames(True)
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
@@ -148,7 +148,7 @@ class clobberInstanceTests(unittest.TestCase):
     def testWhiteModel_2(self):
         model_black = keras.models.load_model('clobber-white-cnn.h5')
         clobber = Clobber_1d("BBWW", BLACK, 1)  # Exp : White loses(0) [1 0]
-        clobber.computePrunedMovesFromSubgames(0)
+        clobber.computePrunedMovesFromSubgames(True)
         X = clobber.board_features
         X = np.reshape(X, (1, 40, 2))
         prediction = model_black.predict(X)
@@ -164,7 +164,7 @@ class clobberInstanceTests(unittest.TestCase):
     def testprediction(self):
         model_black = keras.models.load_model('./clobber-black-cnn.h5')
         clobber = Clobber_1d("BBW", BLACK, 1)  # Exp : White loses(0) [1 0]
-        clobber.computePrunedMovesFromSubgames(0)
+        clobber.computePrunedMovesFromSubgames(True)
         X = clobber.board_features
         start = time.time()
         X = np.reshape(X, (1, 40, 2))
