@@ -27,8 +27,10 @@ class PlayClobber:
         self.DISPROVEN = 1
         self.INFINITY = 10000
         self.winningMove = ()
+        #self.model_black_interpreter = self.modelInferenceInit("./final-models/m9/clobber-black-cnn.tflite")
+        #self.model_white_interpreter = self.modelInferenceInit("./final-models/m9/clobber-white-cnn.tflite")
         self.model_black_interpreter = self.modelInferenceInit("./final-models/m7/clobber-black-cnn.tflite")
-        self.model_white_interpreter = self.modelInferenceInit("./final-models/m7/clobber-white-cnn.tflite")
+        self.model_white_interpreter = self.modelInferenceInit("./final-models/m9/clobber-white-cnn.tflite")
 
     def modelInferenceInit(self, model_path):
         interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -75,27 +77,25 @@ class PlayClobber:
     def cnnMoveOrdering(self, state, legalMoves, previous_score, cnnOrdering):
         moves = []
         countWinMoves = 0
+        noSort = previous_score <= -0.7
         for move_set, _, win, lose, _ in legalMoves:
             for nextMove in move_set:
-                if previous_score > -0.7:
-                    if cnnOrdering:
-                        prediction = self.evaluateMove(state, nextMove)
-                        if prediction > 0.7:
-                            countWinMoves += 1
-                            cnnOrdering = False
-                        #if countWinMoves == 2:
-                        #    cnnOrdering = False
-                        moves.append((nextMove, prediction))
-                    else:
-
-                        if win and not lose:
-                            moves.append((nextMove, 0.6))
-                        elif not win and lose:
-                            moves.append((nextMove, -0.6))
-                        else:
-                            moves.append((nextMove, 1/len(move_set)))
+                if cnnOrdering:
+                    prediction = self.evaluateMove(state, nextMove)
+                    if prediction > 0.7:
+                        countWinMoves += 1
+                        cnnOrdering = False
+                    #if countWinMoves == 2:
+                    #    cnnOrdering = False
+                    moves.append((nextMove, prediction))
                 else:
-                    moves.append((nextMove, 1))
+
+                    if win and not lose:
+                        moves.append((nextMove, 0.6))
+                    elif not win and lose:
+                        moves.append((nextMove, -0.6))
+                    else:
+                        moves.append((nextMove, 1/len(move_set)))
 
         if previous_score > -0.7:
             moves = sorted(moves, key=lambda x: x[1])
