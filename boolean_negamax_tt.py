@@ -27,8 +27,8 @@ class PlayClobber:
         self.DISPROVEN = 1
         self.INFINITY = 10000
         self.winningMove = ()
-        self.model_black_interpreter = self.modelInferenceInit("./clobber-black-cnn.tflite")
-        self.model_white_interpreter = self.modelInferenceInit("./clobber-white-cnn.tflite")
+        self.model_black_interpreter = self.modelInferenceInit("./final-models/m7/clobber-black-cnn.tflite")
+        self.model_white_interpreter = self.modelInferenceInit("./final-models/m7/clobber-white-cnn.tflite")
 
     def modelInferenceInit(self, model_path):
         interpreter = tf.lite.Interpreter(model_path=model_path)

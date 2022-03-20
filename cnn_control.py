@@ -26,6 +26,7 @@ latest = tf.train.latest_checkpoint(checkpoint_dir)
 model.load_weights(latest)
 '''
 
+
 class cnn:
     elements = [".", "B", "W"]
 
@@ -63,23 +64,6 @@ class cnn:
         for i in self.elements:
             self.generateGameCombinations(boardString + i, length + 1, maxlength)
 
-    '''
-    def convertGameStringToInputVector(self, gameBoard):
-        x = np.empty(shape=[0, 2])
-        for i in range(self.MAX_LENGTH):
-            if i < len(gameBoard):
-                if gameBoard[i] == "B":
-                    x = np.append(x, [[0, 1]], axis=0)
-                elif gameBoard[i] == "W":
-                    x = np.append(x, [[1, 0]], axis=0)
-                else:
-                    x = np.append(x, [[0, 0]], axis=0)
-            else:
-                x = np.append(x, [[0, 0]], axis=0)
-
-        return x
-    '''
-
     def convertGameBoardToVector(self, gameBoard):
         x = np.empty(shape=[0, 2])
         for i in range(len(gameBoard)):
@@ -91,6 +75,20 @@ class cnn:
                 x = np.append(x, [[0, 0]], axis=0)
 
         return x
+
+    def createSparseGame(self, pieceCount):
+        dotsCount = self.MAX_LENGTH - pieceCount
+        dots_indices = set(np.random.choice(self.MAX_LENGTH, dotsCount, replace=False))
+        game = "........................................"
+        for i in range(self.MAX_LENGTH):
+            if i not in dots_indices:
+                toss = random.randint(2)
+                if toss == 0:
+                    game = game[:i] + "B" + game[i + 1:]
+                else:
+                    game = game[:i] + "W" + game[i + 1:]
+
+        self.games_for_training.add(game)
 
     def createInputFeatureVector(self, gameBoard):
         x = self.convertGameBoardToVector(gameBoard)
@@ -109,7 +107,7 @@ class cnn:
         '''
         return x
 
-    def createTrainingData(self, first_player=BLACK):
+    def createTrainingData(self, first_player=BLACK, sparseGame=False):
         train_data = []
         label = []
         total = len(self.games_for_training)
@@ -124,10 +122,16 @@ class cnn:
             print("Done")
             if outcome == PROVEN_WIN:
                 label.append(1)
-                train_data.append(self.createInputFeatureVector(game))
+                if sparseGame:
+                    train_data.append(self.convertGameBoardToVector(game))
+                else:
+                    train_data.append(self.createInputFeatureVector(game))
             else:
                 label.append(0)
-                train_data.append(self.createInputFeatureVector(game))
+                if sparseGame:
+                    train_data.append(self.convertGameBoardToVector(game))
+                else:
+                    train_data.append(self.createInputFeatureVector(game))
 
             count += 1
             complete = int(count / total * 100)
@@ -193,11 +197,11 @@ class cnn:
 
 
 class cnn_trainer:
-
     RANDOM_COMBINATION = 1
     ALL_COMBINATION = 2
 
-    def createModelFromScratch(self, board_size, combinations=ALL_COMBINATION, number_of_samples=None, skip_b_train=False):
+    def createModelFromScratch(self, board_size, combinations=ALL_COMBINATION, number_of_samples=None,
+                               skip_b_train=False):
         model = cnn()
         if combinations == self.ALL_COMBINATION:
             model.generateGameCombinations("", 0, board_size)
@@ -215,7 +219,7 @@ class cnn_trainer:
             print(model.label.shape)  # number of games
             model.reshapeInput()
 
-            #model.serialize_train_data('train_data_samples-black.npy', 'labels-black.npy')
+            # model.serialize_train_data('train_data_samples-black.npy', 'labels-black.npy')
             # model.read_train_data('train_data_samples-black.npy', 'labels-black.npy')
 
             model_conv1D = model.cnnModel()
@@ -228,9 +232,10 @@ class cnn_trainer:
                 monitor='val_accuracy',
                 mode='max',
                 save_best_only=True)
-                #save_freq=5 * model.sample_size)
+            # save_freq=5 * model.sample_size)
 
-            history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback], epochs=model.EPOCHS,
+            history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback],
+                                       epochs=model.EPOCHS,
                                        validation_split=0.2, verbose=1)
 
             model_conv1D.save("clobber-black-cnn.h5")
@@ -252,7 +257,7 @@ class cnn_trainer:
             plt.xlabel('epoch')
             plt.legend(['train', 'val'], loc='upper right')
             plt.tight_layout()
-            #plt.show()
+            # plt.show()
             plt.savefig('performance-black.png')
 
             plt.clf()
@@ -271,7 +276,7 @@ class cnn_trainer:
         print(model.label.shape)  # number of games
         model.reshapeInput()
 
-        #model.serialize_train_data('train_data_samples-white.npy', 'labels-white.npy')
+        # model.serialize_train_data('train_data_samples-white.npy', 'labels-white.npy')
         # model.read_train_data('train_data_samples-black.npy', 'labels-black.npy')
 
         model_conv1D = model.cnnModel()
@@ -285,7 +290,8 @@ class cnn_trainer:
             mode='max',
             save_best_only=True)
 
-        history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback], epochs=model.EPOCHS,
+        history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback],
+                                   epochs=model.EPOCHS,
                                    validation_split=0.2, verbose=1)
         # plot_history(history)
         model_conv1D.save("clobber-white-cnn.h5")
@@ -307,18 +313,22 @@ class cnn_trainer:
         plt.xlabel('epoch')
         plt.legend(['train', 'val'], loc='upper right')
         plt.tight_layout()
-        #plt.show()
+        # plt.show()
         plt.savefig('performance-white.png')
         print("Training Complete for white")
 
-    def retrainModelWithSample(self, number_of_samples, board_size):
+    def retrainModelWithSample(self, number_of_samples, board_size, sparseGame=False):
         model = cnn()
+
         for i in range(number_of_samples):
-            board = model.createRandomBoard(board_size)
-            model.games_for_training.add(board)
+            if not sparseGame:
+                board = model.createRandomBoard(board_size)
+                model.games_for_training.add(board)
+            else:
+                model.createSparseGame(board_size)
 
         # black
-        model.createTrainingData()
+        model.createTrainingData(BLACK, sparseGame)
         model.reshapeInput()
         model_conv1D = model.reloadModel()
 
@@ -331,7 +341,8 @@ class cnn_trainer:
             mode='max',
             save_best_only=True)
 
-        history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback], epochs=model.EPOCHS,
+        history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback],
+                                   epochs=model.EPOCHS,
                                    validation_split=0.2, verbose=1)
 
         model_conv1D.save("clobber-black-cnn-retrained.h5")
@@ -363,7 +374,7 @@ class cnn_trainer:
         model = cnn()
         model.games_for_training = model_temp.games_for_training
 
-        model.createTrainingData(WHITE)
+        model.createTrainingData(WHITE, sparseGame)
         model.reshapeInput()
         model_conv1D = model.reloadModel(WHITE)
         # checkpoint
@@ -375,7 +386,8 @@ class cnn_trainer:
             mode='max',
             save_best_only=True)
 
-        history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback],  epochs=model.EPOCHS,
+        history = model_conv1D.fit(model.train_data, model.label, callbacks=[model_checkpoint_callback],
+                                   epochs=model.EPOCHS,
                                    validation_split=0.2, verbose=1)
 
         model_conv1D.save("clobber-white-cnn-retrained.h5")
@@ -423,9 +435,11 @@ class cnn_trainer:
 
 t = cnn_trainer()
 
-#t.createModelFromScratch(18, t.RANDOM_COMBINATION, 400000, True)
+# t.createModelFromScratch(18, t.RANDOM_COMBINATION, 400000, True)
 
-t.retrainModelWithSample(500000, 26)
+#t.retrainModelWithSample(500000, 26)
+
+#t.retrainModelWithSample(300000, 16, True)
 
 t.finalizeRetraining()
 
