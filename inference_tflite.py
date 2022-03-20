@@ -6,6 +6,7 @@ from random import choices
 
 from boolean_negamax_tt import PlayClobber
 from clobber_1d import Clobber_1d
+import sys
 
 games_for_training = []
 
@@ -20,10 +21,11 @@ def createRandomBoard(size, skipDot):
     if skipDot:
         elements = ["B", "W"]
     else:
-        elements = ["B", "W", "."]
+        elements = [".", "B", "W"]#["B", "W", "."]
     board = ""
     population = [0, 1, 2]
-    weights = [0.25, 0.25, 0.5]
+    #weights = [0.6, 0.2, 0.2]
+    weights = [0.65, 0.18, 0.17]
     for i in range(size):
         index = choices(population, weights)
         #board += elements[np.random.randint(low=0, high=3)]
@@ -98,12 +100,13 @@ dotifyGames(boardSize, count_of_positions_to_delete)
 printGames()
 '''
 
-boardSize = 37
-generateGameCombinations(1000, boardSize)
+boardSize = 35
+generateGameCombinations(15000, boardSize)
 printGames()
 #print()
 #games_for_training = compress()
 printGames()
+#sys.exit()
 
 
 def inference_black(board):
@@ -114,7 +117,7 @@ def inference_black(board):
 
     start = time.time()
     # Load TFLite model and allocate tensors.
-    interpreter = tf.lite.Interpreter(model_path="./clobber-black-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./final-models/m7/clobber-black-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
     input_details = interpreter.get_input_details()
@@ -168,7 +171,7 @@ def inference_white(board):
 
     start = time.time()
     # Load TFLite model and allocate tensors.
-    interpreter = tf.lite.Interpreter(model_path="./clobber-white-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./final-models/m7/clobber-white-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
     input_details = interpreter.get_input_details()
