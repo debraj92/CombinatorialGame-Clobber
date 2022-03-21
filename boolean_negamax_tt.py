@@ -1,5 +1,4 @@
 import time
-import keras.models
 import numpy as np
 import tensorflow as tf
 
@@ -18,6 +17,8 @@ class PlayClobber:
     out_of_time = False
 
     max_depth = 0
+
+    count_moves = 0
 
     def __init__(self):
         self.PROVEN_WIN = 10000
@@ -75,15 +76,13 @@ class PlayClobber:
     def cnnMoveOrdering(self, state, legalMoves, previous_score, cnnOrdering):
         moves = []
         countWinMoves = 0
-        for move_set, _, win, lose, _ in legalMoves:
+        for move_set, win, lose, _ in legalMoves:
             for nextMove in move_set:
                 if cnnOrdering:
                     prediction = self.evaluateMove(state, nextMove)
                     if prediction > 0.7:
                         countWinMoves += 1
                         cnnOrdering = False
-                    #if countWinMoves == 2:
-                    #    cnnOrdering = False
                     moves.append((nextMove, prediction))
                 else:
 
@@ -103,7 +102,7 @@ class PlayClobber:
         r_class = True
         countN = 0
         countL = 0
-        for move_set, _, win, lose, isN in legalMoves:
+        for move_set, win, lose, isN in legalMoves:
             l_class = l_class and win and not lose
             if l_class:
                 countL += 1
@@ -113,18 +112,18 @@ class PlayClobber:
             if isN:
                 countN += 1
 
-        if len(legalMoves) > 0 and l_class:
+        if self.count_moves > 0 and l_class:
             self.proven_win_states.add(boardHash)
             return self.INFINITY
-        if len(legalMoves) > 0 and r_class:
+        if self.count_moves > 0 and r_class:
             self.proven_lost_states.add(boardHash)
             return -self.INFINITY
 
-        if len(legalMoves) == 1 and countN == 1:
+        if self.count_moves == 1 and countN == 1:
             self.proven_win_states.add(boardHash)
             return self.INFINITY
 
-        if countN == 1 and countL + countN == len(legalMoves):
+        if countN == 1 and countL + countN == self.count_moves:
             self.proven_win_states.add(boardHash)
             return self.INFINITY
 
@@ -150,7 +149,8 @@ class PlayClobber:
         if boardHash not in self.moves_:
             cnnActive = state.isCNNMoveOrderingActive(previous_score)
             legalMoves = state.computePrunedMovesFromSubgames(cnnActive)
-            if len(legalMoves) == 0:
+            self.count_moves = len(legalMoves)
+            if self.count_moves == 0:
                 self.proven_lost_states.add(boardHash)
                 return -self.INFINITY
 
@@ -165,7 +165,7 @@ class PlayClobber:
         else:
             legalMoves = self.moves_[boardHash]
 
-        isEndOfGame = len(legalMoves) == 0
+        isEndOfGame = self.count_moves == 0
 
         if isEndOfGame:
             self.proven_lost_states.add(boardHash)
