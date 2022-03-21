@@ -75,7 +75,7 @@ class Clobber_1d(object):
         self.resetGame(first_player)
         self.updatePositions()
         self.hash_table = []
-        self.board_hash_value = 0
+        self.board_hash_value = start_position
         self.initZobristHashTable(HashSeed)
         self.getBoardHash()
 
@@ -122,6 +122,7 @@ class Clobber_1d(object):
         self.toPlay = self.opp_color()
 
     def updateBoardHashValue(self, move):
+        return self.to_string(self.board)
         savedHashValue = self.board_hash_value
         src, to = move
         self.board_hash_value ^= self.hash_table[src][self.toPlay]
@@ -185,6 +186,7 @@ class Clobber_1d(object):
         print(Clobber_1d.to_string(self.board))
 
     def getBoardHash(self):
+        return self.to_string(self.board)
         if self.board_hash_value > 0:
             return self.board_hash_value
         zobristHashValue = 0
