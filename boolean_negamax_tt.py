@@ -75,11 +75,12 @@ class PlayClobber:
     def cnnMoveOrdering(self, state, legalMoves, previous_score, cnnOrdering):
         moves = []
         countWinMoves = 0
+        cnnOrdering = cnnOrdering and len(legalMoves) > 12
         for move_set, _, win, lose, _ in legalMoves:
             for nextMove in move_set:
                 if cnnOrdering:
                     prediction = self.evaluateMove(state, nextMove)
-                    if prediction > 0.7:
+                    if prediction < -0.7:
                         countWinMoves += 1
                         cnnOrdering = False
                     #if countWinMoves == 2:
