@@ -48,8 +48,8 @@ class Agent:
 
         # Setup policy & target networks
         # Input Size = Board Size + 1 to indicate current player
-        self.policy_network = DQN(board_size + 1, hidden_size, len(self.action_map))
-        self.target_network = DQN(board_size + 1, hidden_size, len(self.action_map))
+        self.policy_network = DQN(len(self.action_map))
+        self.target_network = DQN(len(self.action_map))
         # We train only the policy network;
         # target network uses the policy network's weights
         self.target_network.load_state_dict(self.policy_network.state_dict())
@@ -100,7 +100,7 @@ class Agent:
 
     def play_one_episode(self, target_model_update, iterations, batch_size):
         board, player = self.environment.reset()
-        state = torch.tensor(board + [player])
+        state = torch.tensor(board + [player]).unsqueeze(0).float()
         all_losses = []
         done = False
 
@@ -129,7 +129,7 @@ class Agent:
 
                 # Get action probabilities from model
                 with torch.no_grad():
-                    action = self.policy_network(state.float().to(self.device))
+                    action = self.policy_network(state.to(self.device))
 
                 # Mask Moves & pick greedy action
                 action = (action + action_mask).argmax()
@@ -138,7 +138,7 @@ class Agent:
             board, player, reward, done = self.environment.step(
                 self.reverse_action_map[int(action)]
             )
-            next_state = torch.tensor(board + [player])
+            next_state = torch.tensor(board + [player]).unsqueeze(0).float()
 
             # If we're done the next state is the terminal state -> None
             if done:
@@ -163,7 +163,7 @@ class Agent:
 
                 # Play move
                 board, player, reward, done = self.environment.step(action)
-                state = torch.tensor(board + [player])
+                state = torch.tensor(board + [player]).unsqueeze(0).float()
 
             # Update target network every target_model_update steps
             if iterations % target_model_update == 0:
@@ -242,12 +242,12 @@ class Agent:
         return loss.detach().cpu()
 
     def predict(self, board, current_player, legal_moves):
-        state = torch.tensor(board + [current_player]).float().to(self.device)
+        state = torch.tensor(board + [current_player]).to(self.device)
         action_mask = torch.tensor(
             [0 if action in legal_moves else -1e9 for action in self.action_map]
         ).to(self.device)
         with torch.no_grad():
-            action = self.policy_network(state)
+            action = self.policy_network(state.unsqueeze(0).float())
         action += action_mask
         return self.reverse_action_map[int(action.argmax())]
 
