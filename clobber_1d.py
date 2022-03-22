@@ -15,10 +15,6 @@ class Clobber_1d(object):
     winning_white_positions = dict()
     n_positions = set()
     p_positions = dict()
-    lower_bound = 16
-    upper_bound = 17
-
-    board_length = 0
 
     # Board is stored in 1-d array of EMPTY, BLACK, WHITE
 
@@ -57,7 +53,7 @@ class Clobber_1d(object):
                 self.opponent_positions.add(i)
 
     def initZobristHashTable(self, HashSeed=None):
-        for i in range(self.board_length):
+        for i in range(len(self.board)):
             random_values = []
             if HashSeed is not None:
                 random.seed(HashSeed)
@@ -73,7 +69,6 @@ class Clobber_1d(object):
         self.setOpponentPlayer()
         self.board_features = None
         self.board = self.custom_board(start_position)
-        self.board_length = len(self.board)
         self.resetGame(first_player)
         self.updatePositions()
         self.hash_table = []
@@ -220,7 +215,7 @@ class Clobber_1d(object):
 
     def isCNNMoveOrderingActive(self, score):
         countOfPieces = len(self.player_positions) + len(self.opponent_positions)
-        return (score > -0.7) and self.lower_bound <= countOfPieces <= self.upper_bound
+        return (score > -0.7) and 16 <= countOfPieces <= 17
 
     def computePrunedMovesFromSubgames(self, isCnnActive):
 
@@ -232,7 +227,7 @@ class Clobber_1d(object):
         reversed_inverse_game = ""
         isfirstPlayer = self.toPlay == self.first_player
         opp = self.opp_color()
-        last = self.board_length - 1
+        last = len(self.board) - 1
         positions = self.player_positions
         if isCnnActive:
             self.board_features = np.full((self.MAX_LENGTH_FEATURES, 2), [[0, 0]], dtype=np.float32)
@@ -293,7 +288,12 @@ class Clobber_1d(object):
                             islosing = current_game in losing_boards
                             isN = current_game in self.n_positions
 
-                            games[current_game] = (moves_subgame, iswinning, islosing, isN)
+                            if iswinning:
+                                sortKey = -depth_L
+                            else:
+                                sortKey = totalMoves
+
+                            games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
 
                     current_game = ""
                     inverse_game = ""
@@ -320,6 +320,11 @@ class Clobber_1d(object):
                     islosing = current_game in losing_boards
                     isN = current_game in self.n_positions
 
-                    games[current_game] = (moves_subgame, iswinning, islosing, isN)
+                    if iswinning:
+                        sortKey = -depth_L
+                    else:
+                        sortKey = totalMoves
+
+                    games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
 
         return games.values()
