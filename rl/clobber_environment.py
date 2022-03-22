@@ -42,7 +42,7 @@ class ClobberEnvironment:
             else:
                 return +1
         else:
-            return -1 / (10 * self.maximum_board_size)
+            return -1 / (100 * self.maximum_board_size)
 
     def generate_action_map(self):
         # Generates the set of all possible actions for the board
