@@ -86,14 +86,14 @@ class Agent:
 
         for _ in tqdm(range(num_episodes)):
             iterations, reward, loss = self.play_one_episode(
-                iteration=iterations,
+                iterations=iterations,
                 target_model_update=target_model_update,
                 batch_size=batch_size,
             )
             all_rewards.append(reward)
             all_losses.append(loss)
             if iterations - last_print >= print_every:
-                average_reward = np.array(all_rewards[-print_every:]).mean()
+                average_reward = np.array(all_rewards).mean()
                 last_print = iterations
                 tqdm.write(f"Average Reward: {average_reward}")
         return iterations, all_rewards, all_losses
@@ -101,7 +101,6 @@ class Agent:
     def play_one_episode(self, target_model_update, iterations, batch_size):
         board, player = self.environment.reset()
         state = torch.tensor(board + [player])
-        state_action_next_state_reward_action_mask = []
         all_losses = []
         done = False
 
@@ -145,14 +144,17 @@ class Agent:
             if done:
                 next_state = None
 
-            # Save state-action pairs
-            state_action_next_state_reward_action_mask.append(
-                (state, action, next_state, reward, action_mask)
-            )
+            # Save transition in memory
+            self.memory.push(state, action, next_state, reward, action_mask)
 
+            # Train model on one batch
+            loss = self.train_model(batch_size)
+            if loss:
+                all_losses.append(loss)
+
+            ## Opponent Move
             # Make sure game is not already over
             if not done:
-                ## Opponent Move
                 # Get legal actions in this state
                 legal_actions = self.environment.get_legal_moves()
 
@@ -169,30 +171,7 @@ class Agent:
 
             iterations += 1
 
-        # Store final reward
-        final_reward = reward
-
-        # Compute rewards
-        _return = 0
-        # Reverse to start at end
-        for (
-            state,
-            action,
-            next_state,
-            reward,
-            action_mask,
-        ) in state_action_next_state_reward_action_mask[::-1]:
-            # Nth reward = gamma^N-1 * reward
-            reward = reward + (self.gamma * _return)
-            _return = reward
-            self.memory.push(state, action, next_state, reward, action_mask)
-
-            # Train our policy network
-            loss = self.train_model(batch_size)
-            if loss:
-                all_losses.append(loss.mean())
-
-        return iterations, final_reward, all_losses
+        return iterations, reward, np.mean(all_losses)
 
     def train_model(self, batch_size):
         # Only train if we have enough samples for a batch of data
@@ -225,8 +204,12 @@ class Agent:
             if state is not None:
                 non_final_next_states.append(state)
                 non_final_action_masks.append(mask)
-        non_final_next_states = torch.stack(non_final_next_states).float().to(self.device)
-        non_final_action_masks = torch.stack(non_final_action_masks).float().to(self.device)
+        non_final_next_states = (
+            torch.stack(non_final_next_states).float().to(self.device)
+        )
+        non_final_action_masks = (
+            torch.stack(non_final_action_masks).float().to(self.device)
+        )
 
         # Compute Q(s_t, a)
         state_action_values = self.policy_network(state_batch).gather(1, action_batch)
@@ -269,7 +252,7 @@ class Agent:
         return self.reverse_action_map[int(action.argmax())]
 
     def policy_model_to_disk(self, save_path):
-        # Save policy_network, action_map and reverse_action_map 
+        # Save policy_network, action_map and reverse_action_map
         pass
 
     def validate(self):
