@@ -215,7 +215,8 @@ class Clobber_1d(object):
 
     def isCNNMoveOrderingActive(self, score):
         countOfPieces = len(self.player_positions) + len(self.opponent_positions)
-        return (score > -0.7) and 16 <= countOfPieces <= 17
+        return (score > -0.7) and 25 <= countOfPieces
+        #return False
 
     def computePrunedMovesFromSubgames(self, isCnnActive):
 
