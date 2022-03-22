@@ -82,9 +82,8 @@ class PlayClobber:
                     prediction = self.evaluateMove(state, nextMove)
                     if prediction < -0.7:
                         countWinMoves += 1
-                        cnnOrdering = False
-                    #if countWinMoves == 2:
-                    #    cnnOrdering = False
+                        if countWinMoves == 3:
+                            cnnOrdering = False
                     moves.append((nextMove, prediction))
                 else:
 
