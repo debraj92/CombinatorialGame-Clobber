@@ -86,6 +86,8 @@ class Clobber_1d(object):
         self.p_positions = gameCache.p_positions
         self.n_positions = gameCache.n_positions
 
+        self.count_legal_moves = 0
+
     def __hash__(self):
         return self.getBoardHash()
 
@@ -247,6 +249,7 @@ class Clobber_1d(object):
             winning_boards = self.winning_white_positions
             losing_boards = self.winning_black_positions
 
+        self.count_legal_moves = 0
         for i, p in enumerate(self.board):
             if self.board[i] != EMPTY:
                 if isCnnActive:
@@ -276,10 +279,13 @@ class Clobber_1d(object):
                 isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
                 if len(current_game) > 0:
                     if (current_game == "12" or current_game == "21") and current_game in games:
+                        self.count_legal_moves -= len(current_game)
                         games.pop(current_game)
                     elif inverse_game in games:
+                        self.count_legal_moves -= len(inverse_game)
                         games.pop(inverse_game)
                     elif reversed_inverse_game in games:
+                        self.count_legal_moves -= len(reversed_inverse_game)
                         games.pop(reversed_inverse_game)
                     elif not isZero:
                         totalMoves = len(moves_subgame)
@@ -295,6 +301,7 @@ class Clobber_1d(object):
                                 sortKey = totalMoves
 
                             games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
+                            self.count_legal_moves += totalMoves
 
                     current_game = ""
                     inverse_game = ""
@@ -308,10 +315,13 @@ class Clobber_1d(object):
         isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
         if len(current_game) > 0:
             if (current_game == "12" or current_game == "21") and current_game in games:
+                self.count_legal_moves -= len(current_game)
                 games.pop(current_game)
             elif inverse_game in games:
+                self.count_legal_moves -= len(inverse_game)
                 games.pop(inverse_game)
             elif reversed_inverse_game in games:
+                self.count_legal_moves -= len(reversed_inverse_game)
                 games.pop(reversed_inverse_game)
             elif not isZero:
                 totalMoves = len(moves_subgame)
@@ -327,5 +337,6 @@ class Clobber_1d(object):
                         sortKey = totalMoves
 
                     games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
+                    self.count_legal_moves += totalMoves
 
         return games.values()
