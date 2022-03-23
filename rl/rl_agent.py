@@ -81,32 +81,43 @@ class Agent:
     ):
         iterations = 0
         all_rewards = []
+        average_rewards = []
         all_losses = []
         last_print = 0
 
         for _ in tqdm(range(num_episodes)):
-            iterations, reward, loss = self.play_one_episode(
+            iterations, reward, loss = self.train_on_one_episode(
                 iterations=iterations,
                 target_model_update=target_model_update,
                 batch_size=batch_size,
             )
             all_rewards.append(reward)
             all_losses.append(loss)
+            average_reward = np.array(all_rewards).mean()
+            average_rewards.append(average_reward)
             if iterations - last_print >= print_every:
-                average_reward = np.array(all_rewards).mean()
                 last_print = iterations
                 tqdm.write(f"Average Reward: {average_reward}")
-        return iterations, all_rewards, all_losses
+        return iterations, average_rewards, all_losses
 
-    def play_one_episode(self, target_model_update, iterations, batch_size):
+    def compute_action_mask(self, legal_moves, mask_value=-1e9):
+        return torch.tensor(
+            [0 if action in legal_moves else mask_value for action in self.action_map]
+        ).to(self.device)
+
+    def train_on_one_episode(self, target_model_update, iterations, batch_size):
         board, player = self.environment.reset()
-        state = torch.tensor(board + [player]).unsqueeze(0).float()
         all_losses = []
         done = False
 
         while not done:
+            state = torch.tensor(board + [player]).unsqueeze(0).float()
+
             # Get legal actions in this state
             legal_actions = self.environment.get_legal_moves()
+
+            # Make action mask
+            action_mask = self.compute_action_mask(legal_actions)
 
             ## Use Epsilon-Greedy Policy
             eps_threshold = self.epsilon_end + (
@@ -116,23 +127,13 @@ class Agent:
             # Choose random action
             if random.random() > eps_threshold:
                 action = torch.tensor(self.action_map[random.choice(legal_actions)])
-                action_mask = torch.zeros((len(self.action_map)))
             # Use network for action selection
             else:
-                # Make action mask
-                action_mask = torch.tensor(
-                    [
-                        0 if action in legal_actions else -1e9
-                        for action in self.action_map
-                    ]
-                )
-
                 # Get action probabilities from model
                 with torch.no_grad():
                     action = self.policy_network(state.to(self.device))
-
-                # Mask Moves & pick greedy action
-                action = (action + action_mask).argmax()
+                    # Mask Moves & pick greedy action
+                    action = (action + action_mask).argmax().cpu()
 
             # Play move
             board, player, reward, done = self.environment.step(
@@ -163,7 +164,6 @@ class Agent:
 
                 # Play move
                 board, player, reward, done = self.environment.step(action)
-                state = torch.tensor(board + [player]).unsqueeze(0).float()
 
             # Update target network every target_model_update steps
             if iterations % target_model_update == 0:
@@ -241,19 +241,55 @@ class Agent:
         self.optimizer.step()
         return loss.detach().cpu()
 
-    def predict(self, board, current_player, legal_moves):
-        state = torch.tensor(board + [current_player]).to(self.device)
-        action_mask = torch.tensor(
-            [0 if action in legal_moves else -1e9 for action in self.action_map]
-        ).to(self.device)
+    def predict(self, state, action_mask):
         with torch.no_grad():
-            action = self.policy_network(state.unsqueeze(0).float())
-        action += action_mask
-        return self.reverse_action_map[int(action.argmax())]
+            action = self.policy_network(state)
+            action = (action + action_mask).argmax().cpu()
+        return self.reverse_action_map[int(action)]
 
     def policy_model_to_disk(self, save_path):
         # Save policy_network, action_map and reverse_action_map
         pass
 
-    def validate(self):
-        pass
+    def play_one_episode(self, random_agent=False):
+        board, player = self.environment.reset()
+        done = False
+
+        while not done:
+            # Get legal actions in this state
+            legal_actions = self.environment.get_legal_moves()
+
+            # Choose move
+            if random_agent:
+                action = random.choice(legal_actions)
+            else:
+                state = torch.tensor(board + [player]).unsqueeze(0).float()
+                action_mask = self.compute_action_mask(legal_actions)
+                action = self.predict(state, action_mask)
+
+            # Play move
+            board, player, reward, done = self.environment.step(action)
+
+            ## Opponent Move
+            # Make sure game is not already over
+            if not done:
+                # Get legal actions in this state
+                legal_actions = self.environment.get_legal_moves()
+
+                # Pick Random move
+                action = random.choice(legal_actions)
+
+                # Play move
+                board, player, reward, done = self.environment.step(action)
+
+        return reward
+
+    def evaluate(self, num_episodes):
+        agent_rewards = [self.play_one_episode() for _ in range(num_episodes)]
+        random_rewards = [
+            self.play_one_episode(random_agent=True) for _ in range(num_episodes)
+        ]
+        print(f"After {num_episodes} episodes:")
+        print(f"Random Agent: {np.mean(random_rewards)}")
+        print(f"Trained Agent: {np.mean(agent_rewards)}")
+        return agent_rewards, random_rewards
