@@ -24,11 +24,12 @@ class ClobberEnvironment:
         reward = self.compute_rewards(end_of_game)
         return self.board, self.current_player, reward, end_of_game
 
-    def reset(self):
+    def reset(self, hard_reset=False):
         # Reset the state of the environment to an initial state
-        while self.is_end_of_game():
+        while hard_reset or self.is_end_of_game():
+            hard_reset = False
             self.board = self.generate_board()
-            self.first_player = random.choice([BLACK, WHITE])
+            self.first_player = self.pick_starting_player()
             self.current_player = self.first_player
             self.compute_legal_moves()
         return self.board, self.current_player
@@ -67,6 +68,9 @@ class ClobberEnvironment:
             return random.choices([BLACK, WHITE], k=self.maximum_board_size)
         else:
             return random.choices([BLACK, WHITE, EMPTY], k=self.maximum_board_size)
+
+    def pick_starting_player(self):
+        return random.choice([BLACK, WHITE])
 
     def compute_legal_moves(self):
         moves = []
