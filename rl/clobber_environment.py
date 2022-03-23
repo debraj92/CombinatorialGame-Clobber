@@ -28,7 +28,7 @@ class ClobberEnvironment:
         # Reset the state of the environment to an initial state
         while self.is_end_of_game():
             self.board = self.generate_board()
-            self.first_player = BLACK # random.choice([BLACK, WHITE])
+            self.first_player = random.choice([BLACK, WHITE])
             self.current_player = self.first_player
             self.compute_legal_moves()
         return self.board, self.current_player
