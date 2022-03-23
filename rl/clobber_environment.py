@@ -35,6 +35,13 @@ class ClobberEnvironment:
             self.compute_legal_moves()
         return self.board, self.current_player
 
+    def reset_to_board(self, board, first_player):
+        self.board = board
+        self.first_player = first_player
+        self.current_player = first_player
+        self.compute_legal_moves()
+        return self.board, self.current_player
+
     def compute_rewards(self, end_of_game):
         if end_of_game:
             if self.current_player == self.first_player:
