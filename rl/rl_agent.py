@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 from collections import namedtuple, deque
 import sys
+import copy
 from tqdm import tqdm
 import numpy as np
 
@@ -34,12 +35,12 @@ class Agent:
     def __init__(
         self,
         board_size=10,
-        hidden_size=64,
         memory_size=10000,
         gamma=0.95,
         epsilon_start=0.95,
         epsilon_end=0.05,
         epsilon_decay=200,
+        learning_rate=1e-3,
     ):
         # Setup Environment
         self.environment = ClobberEnvironment(board_size)
@@ -57,7 +58,7 @@ class Agent:
         self.target_network.eval()
 
         # Setup optimizer & memory
-        self.optimizer = torch.optim.RMSprop(self.policy_network.parameters())
+        self.optimizer = torch.optim.RMSprop(self.policy_network.parameters(), lr=learning_rate)
         self.memory = ReplayMemory(memory_size)
         self.gamma = gamma
         self.epsilon_start = epsilon_start
@@ -251,8 +252,11 @@ class Agent:
         # Save policy_network, action_map and reverse_action_map
         pass
 
-    def play_one_episode(self, random_agent=False):
-        board, player = self.environment.reset()
+    def play_one_episode(self, random_agent=False, state={}):
+        if state:
+            board, player = self.environment.reset_to_board(**state)
+        else:
+            board, player = self.environment.reset()
         done = False
 
         while not done:
@@ -285,11 +289,21 @@ class Agent:
         return reward
 
     def evaluate(self, num_episodes):
-        agent_rewards = [self.play_one_episode() for _ in range(num_episodes)]
-        random_rewards = [
-            self.play_one_episode(random_agent=True) for _ in range(num_episodes)
-        ]
+        random_rewards = []
+        agent_rewards = []
+        for i in tqdm(range(num_episodes)):
+            board, first_player = self.environment.reset(hard_reset=True)
+            state = {
+                "board": board,
+                "first_player": first_player,
+            }
+            random_reward = self.play_one_episode(
+                random_agent=True, state=copy.deepcopy(state)
+            )
+            agent_reward = self.play_one_episode(state=state)
+            random_rewards.append(random_reward)
+            agent_rewards.append(agent_reward)
         print(f"After {num_episodes} episodes:")
         print(f"Random Agent: {np.mean(random_rewards)}")
         print(f"Trained Agent: {np.mean(agent_rewards)}")
-        return agent_rewards, random_rewards
+        return random_rewards, agent_rewards
