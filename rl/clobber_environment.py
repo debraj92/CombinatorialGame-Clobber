@@ -9,10 +9,8 @@ class ClobberEnvironment:
     def __init__(self, maximum_board_size):
         self.maximum_board_size = maximum_board_size
         self.action_map = self.generate_action_map()
-        self.board = self.generate_board()
-        self.first_player = random.choice([BLACK, WHITE])
-        self.current_player = self.first_player
-        self.compute_legal_moves()
+        self.legal_moves = []
+        self.reset()
 
     def step(self, action):
         # Execute one time step within the environment
@@ -30,7 +28,7 @@ class ClobberEnvironment:
         # Reset the state of the environment to an initial state
         while self.is_end_of_game():
             self.board = self.generate_board()
-            self.first_player = random.choice([BLACK, WHITE])
+            self.first_player = BLACK # random.choice([BLACK, WHITE])
             self.current_player = self.first_player
             self.compute_legal_moves()
         return self.board, self.current_player
