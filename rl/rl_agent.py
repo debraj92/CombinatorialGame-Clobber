@@ -4,6 +4,7 @@ import torch.nn as nn
 from collections import namedtuple, deque
 import sys
 import copy
+import pickle
 from tqdm import tqdm
 import numpy as np
 
@@ -58,7 +59,9 @@ class Agent:
         self.target_network.eval()
 
         # Setup optimizer & memory
-        self.optimizer = torch.optim.RMSprop(self.policy_network.parameters(), lr=learning_rate)
+        self.optimizer = torch.optim.RMSprop(
+            self.policy_network.parameters(), lr=learning_rate
+        )
         self.memory = ReplayMemory(memory_size)
         self.gamma = gamma
         self.epsilon_start = epsilon_start
@@ -98,7 +101,7 @@ class Agent:
             average_rewards.append(average_reward)
             if iterations - last_print >= print_every:
                 last_print = iterations
-                tqdm.write(f"Average Reward: {average_reward}")
+                tqdm.write(f"Average Reward: {average_reward}, Loss: {loss}")
         return iterations, average_rewards, all_losses
 
     def compute_action_mask(self, legal_moves, mask_value=-1e9):
@@ -288,9 +291,13 @@ class Agent:
 
         return reward
 
-    def evaluate(self, num_episodes):
+    def evaluate(self, num_episodes, evaluation_db=None):
         random_rewards = []
         agent_rewards = []
+        if evaluation_db:
+            true_total_reward = 0
+            with open(evaluation_db, "rb") as fp:
+                evaluation_db = pickle.load(fp)
         for i in tqdm(range(num_episodes)):
             board, first_player = self.environment.reset(hard_reset=True)
             state = {
@@ -300,10 +307,22 @@ class Agent:
             random_reward = self.play_one_episode(
                 random_agent=True, state=copy.deepcopy(state)
             )
-            agent_reward = self.play_one_episode(state=state)
+            agent_reward = self.play_one_episode(state=copy.deepcopy(state))
             random_rewards.append(random_reward)
             agent_rewards.append(agent_reward)
+            if evaluation_db:
+                outcome = evaluation_db[tuple(board)]
+                if outcome[first_player - 1] == "1":
+                    true_total_reward += 1
+                else:
+                    true_total_reward -= 1
+
         print(f"After {num_episodes} episodes:")
-        print(f"Random Agent: {np.mean(random_rewards)}")
-        print(f"Trained Agent: {np.mean(agent_rewards)}")
-        return random_rewards, agent_rewards
+        print(
+            f"[Random Agent] Mean Reward: {np.mean(random_rewards)}, Total Reward: {sum(random_rewards)}"
+        )
+        print(
+            f"[Trained Agent] Mean Reward: {np.mean(agent_rewards)}, Total Reward: {sum(agent_rewards)}"
+        )
+        if evaluation_db:
+            print(f"True Total Reward: {true_total_reward}")
