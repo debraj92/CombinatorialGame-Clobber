@@ -67,6 +67,7 @@ class Agent:
         self.epsilon_start = epsilon_start
         self.epsilon_end = epsilon_end
         self.epsilon_decay = epsilon_decay
+        self.iterations = 0
 
         # Setup device
         self.gpu = torch.cuda.is_available()
@@ -83,15 +84,13 @@ class Agent:
         target_model_update=100,
         batch_size=32,
     ):
-        iterations = 0
         all_rewards = []
         average_rewards = []
         all_losses = []
         last_print = 0
 
         for _ in tqdm(range(num_episodes)):
-            iterations, reward, loss = self.train_on_one_episode(
-                iterations=iterations,
+            reward, loss = self.train_on_one_episode(
                 target_model_update=target_model_update,
                 batch_size=batch_size,
             )
@@ -99,17 +98,17 @@ class Agent:
             all_losses.append(loss)
             average_reward = np.array(all_rewards).mean()
             average_rewards.append(average_reward)
-            if iterations - last_print >= print_every:
-                last_print = iterations
+            if self.iterations - last_print >= print_every:
+                last_print = self.iterations
                 tqdm.write(f"Average Reward: {average_reward}, Loss: {loss}")
-        return iterations, average_rewards, all_losses
+        return self.iterations, average_rewards, all_losses
 
     def compute_action_mask(self, legal_moves, mask_value=-1e9):
         return torch.tensor(
             [0 if action in legal_moves else mask_value for action in self.action_map]
         ).to(self.device)
 
-    def train_on_one_episode(self, target_model_update, iterations, batch_size):
+    def train_on_one_episode(self, target_model_update, batch_size):
         board, player = self.environment.reset()
         all_losses = []
         done = False
@@ -124,12 +123,13 @@ class Agent:
             action_mask = self.compute_action_mask(legal_actions)
 
             ## Use Epsilon-Greedy Policy
-            eps_threshold = self.epsilon_end + (
+            epsilon_threshold = self.epsilon_end + (
                 self.epsilon_start - self.epsilon_end
-            ) * np.exp(-1.0 * iterations / self.epsilon_decay)
+            ) * np.exp(-1.0 * self.iterations / self.epsilon_decay)
+            print(epsilon_threshold)
 
             # Choose random action
-            if random.random() > eps_threshold:
+            if random.random() > epsilon_threshold:
                 action = torch.tensor(self.action_map[random.choice(legal_actions)])
             # Use network for action selection
             else:
@@ -170,12 +170,12 @@ class Agent:
                 board, player, reward, done = self.environment.step(action)
 
             # Update target network every target_model_update steps
-            if iterations % target_model_update == 0:
+            if self.iterations % target_model_update == 0:
                 self.target_network.load_state_dict(self.policy_network.state_dict())
 
-            iterations += 1
+            self.iterations += 1
 
-        return iterations, reward, np.mean(all_losses)
+        return reward, np.mean(all_losses)
 
     def train_model(self, batch_size):
         # Only train if we have enough samples for a batch of data
@@ -251,9 +251,16 @@ class Agent:
             action = (action + action_mask).argmax().cpu()
         return self.reverse_action_map[int(action)]
 
-    def policy_model_to_disk(self, save_path):
+    def save_for_deployment(self, save_path):
         # Save policy_network, action_map and reverse_action_map
-        pass
+        torch.save(
+        {
+            "policy_network": self.policy_network.state_dict(),
+            "action_map": self.action_map,
+            "reverse_action_map": self.reverse_action_map
+        },
+        save_path,
+    )
 
     def play_one_episode(self, random_agent=False, state={}):
         if state:
