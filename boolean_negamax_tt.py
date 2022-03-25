@@ -95,6 +95,14 @@ class PlayClobber:
             moves = sorted(moves, key=lambda x: x[1])
         return moves
 
+    def noMoveOrdering(self, legalMoves):
+        moves = []
+        for move_set, _, win, lose, _ in legalMoves:
+            for nextMove in move_set:
+                moves.append((nextMove, 0))
+
+        return moves
+
     def handleProcessingSubgames(self, legalMoves, boardHash):
         l_class = True
         r_class = True
@@ -158,6 +166,7 @@ class PlayClobber:
                     return result
 
             legalMoves = self.cnnMoveOrdering(state, legalMoves, previous_score, cnnActive)
+            #legalMoves = self.noMoveOrdering(legalMoves)
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
