@@ -22,6 +22,7 @@ class Clobber_1d(object):
     opponent_positions = set()
     first_player = WHITE
     opponent_player = BLACK
+    cnn_enabled = True
 
     def custom_board(self, start_position):  # str of B, W, E or .
         color_map = {"B": BLACK, "W": WHITE, "E": EMPTY, ".": EMPTY}
@@ -217,8 +218,7 @@ class Clobber_1d(object):
 
     def isCNNMoveOrderingActive(self, score):
         countOfPieces = len(self.player_positions) + len(self.opponent_positions)
-        return (score > -0.7) and 25 <= countOfPieces
-        #return False
+        return self.cnn_enabled and (score > -0.7) and 25 <= countOfPieces
 
     def computePrunedMovesFromSubgames(self, isCnnActive):
 
