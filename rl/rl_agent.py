@@ -44,14 +44,19 @@ class Agent:
         learning_rate=1e-3,
     ):
         # Setup Environment
-        self.environment = ClobberEnvironment(board_size)
+        self.board_size = board_size
+        self.environment = ClobberEnvironment(self.board_size)
         self.action_map = self.environment.get_action_map()
         self.reverse_action_map = {value: key for key, value in self.action_map.items()}
 
         # Setup policy & target networks
         # Input Size = Board Size + 1 to indicate current player
-        self.policy_network = DQN(len(self.action_map))
-        self.target_network = DQN(len(self.action_map))
+        self.policy_network = DQN(
+            output_size=len(self.action_map), max_board_size=self.board_size
+        )
+        self.target_network = DQN(
+            output_size=len(self.action_map), max_board_size=self.board_size
+        )
         # We train only the policy network;
         # target network uses the policy network's weights
         self.target_network.load_state_dict(self.policy_network.state_dict())
@@ -126,7 +131,6 @@ class Agent:
             epsilon_threshold = self.epsilon_end + (
                 self.epsilon_start - self.epsilon_end
             ) * np.exp(-1.0 * self.iterations / self.epsilon_decay)
-            print(epsilon_threshold)
 
             # Choose random action
             if random.random() > epsilon_threshold:
@@ -254,13 +258,14 @@ class Agent:
     def save_for_deployment(self, save_path):
         # Save policy_network, action_map and reverse_action_map
         torch.save(
-        {
-            "policy_network": self.policy_network.state_dict(),
-            "action_map": self.action_map,
-            "reverse_action_map": self.reverse_action_map
-        },
-        save_path,
-    )
+            {
+                "policy_network": self.policy_network.state_dict(),
+                "action_map": self.action_map,
+                "reverse_action_map": self.reverse_action_map,
+                "board_size": self.board_size,
+            },
+            save_path,
+        )
 
     def play_one_episode(self, random_agent=False, state={}):
         if state:

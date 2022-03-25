@@ -17,9 +17,12 @@ class DeployableAgent:
         # Initialize Action Maps
         self.action_map = saved_model["action_map"]
         self.reverse_action_map = saved_model["reverse_action_map"]
+        self.board_size = saved_model["board_size"]
 
         # Create model & restore weights
-        self.policy_network = DQN(len(self.action_map)).to(self.device)
+        self.policy_network = DQN(
+            output_size=len(self.action_map), max_board_size=self.board_size
+        ).to(self.device)
         self.policy_network.load_state_dict(saved_model["policy_network"])
         self.policy_network.eval()
 
