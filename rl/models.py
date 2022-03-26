@@ -62,7 +62,12 @@ class DQN(nn.Module):
         model.append(nn.ReLU(inplace=True))
 
         self.model = nn.Sequential(*model)
-        self.final_layer = nn.LazyLinear(out_features=output_size)
+        self.final_layer = nn.Sequential(
+            nn.LazyLinear(out_features=128),
+            nn.ReLU(inplace=True),
+            nn.Dropout(p=0.3),
+            nn.Linear(in_features=128, out_features=output_size),
+        )
 
     def forward(self, x):
         x = self.model(x)
