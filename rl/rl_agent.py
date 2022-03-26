@@ -100,12 +100,12 @@ class Agent:
                 batch_size=batch_size,
             )
             all_rewards.append(reward)
-            all_losses.append(loss)
+            all_losses.extend(loss)
             average_reward = np.array(all_rewards).mean()
             average_rewards.append(average_reward)
             if self.iterations - last_print >= print_every:
                 last_print = self.iterations
-                tqdm.write(f"Average Reward: {average_reward}, Loss: {loss}")
+                tqdm.write(f"Average Reward: {average_reward}, Loss: {np.mean(loss)}")
         return self.iterations, average_rewards, all_losses
 
     def compute_action_mask(self, legal_moves, mask_value=-1e9):
@@ -179,7 +179,7 @@ class Agent:
 
             self.iterations += 1
 
-        return reward, np.mean(all_losses)
+        return reward, all_losses
 
     def train_model(self, batch_size):
         # Only train if we have enough samples for a batch of data
