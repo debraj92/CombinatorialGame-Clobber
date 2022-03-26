@@ -64,7 +64,7 @@ class Agent:
         self.target_network.eval()
 
         # Setup optimizer & memory
-        self.optimizer = torch.optim.RMSprop(
+        self.optimizer = torch.optim.Adam(
             self.policy_network.parameters(), lr=learning_rate
         )
         self.memory = ReplayMemory(memory_size)
