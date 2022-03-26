@@ -63,11 +63,38 @@ class ClobberEnvironment:
 
     def generate_board(self):
         # Returns a randomly generated board of maximum board size
-        # 66% of the time it returns a full board - no empty spots
-        if random.choice([True, True, False]):
+        # Returns either a random board with B/W only
+        # or a random board with B/W/.
+        # or a random board of (BW)^n
+        # or a random board of (BBW)^n
+        # Each with a 25% chance
+        rand_num = random.random()
+        if rand_num < 0.25:
             return random.choices([BLACK, WHITE], k=self.maximum_board_size)
-        else:
+        elif rand_num < 0.50:
             return random.choices([BLACK, WHITE, EMPTY], k=self.maximum_board_size)
+        elif rand_num < 0.75:
+            board_len = random.randint(1, self.maximum_board_size // 2)
+            board = [EMPTY] * self.maximum_board_size
+            board_size = board_len * 2
+            start_pos = random.randint(0, self.maximum_board_size - board_size)
+            end_pos = board_size + start_pos
+            if random.choice([True, False]):
+                board[start_pos:end_pos] = [BLACK, WHITE] * board_len
+            else:
+                board[start_pos:end_pos] = [WHITE, BLACK] * board_len
+            return board
+        else:
+            board_len = random.randint(1, self.maximum_board_size // 3)
+            board = [EMPTY] * self.maximum_board_size
+            board_size = board_len * 3
+            start_pos = random.randint(0, self.maximum_board_size - board_size)
+            end_pos = board_size + start_pos
+            if random.choice([True, False]):
+                board[start_pos:end_pos] = [BLACK, BLACK, WHITE] * board_len
+            else:
+                board[start_pos:end_pos] = [WHITE, WHITE, BLACK] * board_len
+            return board
 
     def pick_starting_player(self):
         return random.choice([BLACK, WHITE])
