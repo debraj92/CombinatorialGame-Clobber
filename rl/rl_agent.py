@@ -85,9 +85,11 @@ class Agent:
     def train(
         self,
         num_episodes,
-        print_every=1000,
         target_model_update=100,
         batch_size=32,
+        evaluation_interval=1000,
+        evaluation_episodes=100,
+        evaluation_db=None,
     ):
         all_rewards = []
         average_rewards = []
@@ -103,9 +105,14 @@ class Agent:
             all_losses.extend(loss)
             average_reward = np.array(all_rewards).mean()
             average_rewards.append(average_reward)
-            if self.iterations - last_print >= print_every:
+            if self.iterations - last_print >= evaluation_interval:
                 last_print = self.iterations
-                tqdm.write(f"Average Reward: {average_reward}, Loss: {np.mean(loss)}")
+                random_rewards, agent_rewards, total_rewards = self.silent_evaluate(
+                    evaluation_episodes, evaluation_db
+                )
+                tqdm.write(
+                    f"Iteration {self.iterations}: [Random] {random_rewards}\t[Agent] {agent_rewards}\t [True Total] {total_rewards}"
+                )
         return self.iterations, average_rewards, all_losses
 
     def compute_action_mask(self, legal_moves, mask_value=-1e9):
@@ -117,10 +124,9 @@ class Agent:
         board, player = self.environment.reset()
         all_losses = []
         done = False
+        state = torch.tensor(board + [player]).unsqueeze(0).float()
 
         while not done:
-            state = torch.tensor(board + [player]).unsqueeze(0).float()
-
             # Get legal actions in this state
             legal_actions = self.environment.get_legal_moves()
 
@@ -144,34 +150,34 @@ class Agent:
                     action = (action + action_mask).argmax().cpu()
 
             # Play move
-            board, player, reward, done = self.environment.step(
+            _, _, reward, done = self.environment.step(
                 self.reverse_action_map[int(action)]
             )
-            next_state = torch.tensor(board + [player]).unsqueeze(0).float()
 
-            # If we're done the next state is the terminal state -> None
-            if done:
-                next_state = None
-
-            # Save transition in memory
-            self.memory.push(state, action, next_state, reward, action_mask)
-
-            # Train model on one batch
-            loss = self.train_model(batch_size)
-            if loss:
-                all_losses.append(loss)
-
-            ## Opponent Move
-            # Make sure game is not already over
+            # Else simulate opponent move as part of the environment
             if not done:
                 # Get legal actions in this state
                 legal_actions = self.environment.get_legal_moves()
 
-                # Pick Random move
-                action = random.choice(legal_actions)
+                # Pick random move
+                opponent_action = random.choice(legal_actions)
 
                 # Play move
-                board, player, reward, done = self.environment.step(action)
+                board, player, _, done = self.environment.step(opponent_action)
+                next_state = torch.tensor(board + [player]).unsqueeze(0).float()
+
+            # If we're done the next state is the terminal state -> None
+            if done:
+                next_state = None
+                
+            # Save transition in memory
+            self.memory.push(state, action, next_state, reward, action_mask)
+            state = next_state
+
+            # Train model on one batch of data
+            loss = self.train_model(batch_size)
+            if loss:
+                all_losses.append(loss)
 
             # Update target network every target_model_update steps
             if self.iterations % target_model_update == 0:
@@ -303,6 +309,36 @@ class Agent:
 
         return reward
 
+    def silent_evaluate(self, num_episodes, evaluation_db=None):
+        random_rewards = []
+        agent_rewards = []
+        if evaluation_db:
+            true_total_reward = 0
+            with open(evaluation_db, "rb") as fp:
+                evaluation_db = pickle.load(fp)
+        for _ in range(num_episodes):
+            board, first_player = self.environment.reset(hard_reset=True)
+            state = {
+                "board": board,
+                "first_player": first_player,
+            }
+            random_reward = self.play_one_episode(
+                random_agent=True, state=copy.deepcopy(state)
+            )
+            agent_reward = self.play_one_episode(state=copy.deepcopy(state))
+            random_rewards.append(random_reward)
+            agent_rewards.append(agent_reward)
+            if evaluation_db:
+                outcome = evaluation_db[tuple(board)]
+                if outcome[first_player - 1] == "1":
+                    true_total_reward += 1
+                else:
+                    true_total_reward -= 1
+        if evaluation_db:
+            return sum(random_rewards), sum(agent_rewards), true_total_reward
+        else:
+            return sum(random_rewards), sum(agent_rewards), 0
+
     def evaluate(self, num_episodes, evaluation_db=None):
         random_rewards = []
         agent_rewards = []
@@ -328,7 +364,6 @@ class Agent:
                     true_total_reward += 1
                 else:
                     true_total_reward -= 1
-
         print(f"After {num_episodes} episodes:")
         print(
             f"[Random Agent] Mean Reward: {np.mean(random_rewards)}, Total Reward: {sum(random_rewards)}"
