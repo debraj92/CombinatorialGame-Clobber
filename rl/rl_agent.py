@@ -42,6 +42,7 @@ class Agent:
         epsilon_end=0.05,
         epsilon_decay=200,
         learning_rate=1e-3,
+        evaluation_db=None,
     ):
         # Setup Environment
         self.board_size = board_size
@@ -82,6 +83,13 @@ class Agent:
         self.policy_network.to(self.device)
         self.target_network.to(self.device)
 
+        # Load an evaluation DB if provided
+        if evaluation_db:
+            with open(evaluation_db, "rb") as fp:
+                self.evaluation_db = pickle.load(fp)
+        else:
+            self.evaluation_db = None
+
     def train(
         self,
         num_episodes,
@@ -89,7 +97,6 @@ class Agent:
         batch_size=32,
         evaluation_interval=1000,
         evaluation_episodes=100,
-        evaluation_db=None,
     ):
         all_rewards = []
         average_rewards = []
@@ -106,13 +113,18 @@ class Agent:
             average_reward = np.array(all_rewards).mean()
             average_rewards.append(average_reward)
             if self.iterations - last_print >= evaluation_interval:
+                self.policy_network.eval()
                 last_print = self.iterations
-                random_rewards, agent_rewards, total_rewards = self.silent_evaluate(
-                    evaluation_episodes, evaluation_db
-                )
+                (
+                    random_v_random_rewards,
+                    agent_v_random_rewards,
+                    agent_v_agent_rewards,
+                    optimal_play_rewards,
+                ) = self.silent_evaluate(evaluation_episodes)
                 tqdm.write(
-                    f"Iteration {self.iterations}: [Random] {random_rewards}\t[Agent] {agent_rewards}\t [True Total] {total_rewards}"
+                    f"Iteration {self.iterations}:\n[Random vs Random] {random_v_random_rewards}\t[Agent vs Random] {agent_v_random_rewards}\t[Agent vs Agent] {agent_v_agent_rewards}\t[Optimal Play] {optimal_play_rewards}"
                 )
+                self.policy_network.train()
         return self.iterations, average_rewards, all_losses
 
     def compute_action_mask(self, legal_moves, mask_value=-1e9):
@@ -169,7 +181,7 @@ class Agent:
             # If we're done the next state is the terminal state -> None
             if done:
                 next_state = None
-                
+
             # Save transition in memory
             self.memory.push(state, action, next_state, reward, action_mask)
             state = next_state
@@ -273,7 +285,7 @@ class Agent:
             save_path,
         )
 
-    def play_one_episode(self, random_agent=False, state={}):
+    def play_one_episode(self, first_agent="model", second_agent="random", state={}):
         if state:
             board, player = self.environment.reset_to_board(**state)
         else:
@@ -285,7 +297,7 @@ class Agent:
             legal_actions = self.environment.get_legal_moves()
 
             # Choose move
-            if random_agent:
+            if first_agent == "random":
                 action = random.choice(legal_actions)
             else:
                 state = torch.tensor(board + [player]).unsqueeze(0).float()
@@ -301,75 +313,100 @@ class Agent:
                 # Get legal actions in this state
                 legal_actions = self.environment.get_legal_moves()
 
-                # Pick Random move
-                action = random.choice(legal_actions)
+                # Choose move
+                if second_agent == "random":
+                    action = random.choice(legal_actions)
+                else:
+                    state = torch.tensor(board + [player]).unsqueeze(0).float()
+                    action_mask = self.compute_action_mask(legal_actions)
+                    action = self.predict(state, action_mask)
 
                 # Play move
                 board, player, reward, done = self.environment.step(action)
 
         return reward
 
-    def silent_evaluate(self, num_episodes, evaluation_db=None):
-        random_rewards = []
-        agent_rewards = []
-        if evaluation_db:
-            true_total_reward = 0
-            with open(evaluation_db, "rb") as fp:
-                evaluation_db = pickle.load(fp)
+    def silent_evaluate(self, num_episodes):
+        random_v_random = []
+        agent_v_random = []
+        agent_v_agent = []
+        optimal_play_reward = 0
+        # Play the same N episodes for each comparison
         for _ in range(num_episodes):
             board, first_player = self.environment.reset(hard_reset=True)
             state = {
                 "board": board,
                 "first_player": first_player,
             }
-            random_reward = self.play_one_episode(
-                random_agent=True, state=copy.deepcopy(state)
+            random_v_random_reward = self.play_one_episode(
+                first_agent="random", second_agent="random", state=copy.deepcopy(state)
             )
-            agent_reward = self.play_one_episode(state=copy.deepcopy(state))
-            random_rewards.append(random_reward)
-            agent_rewards.append(agent_reward)
-            if evaluation_db:
-                outcome = evaluation_db[tuple(board)]
-                if outcome[first_player - 1] == "1":
-                    true_total_reward += 1
-                else:
-                    true_total_reward -= 1
-        if evaluation_db:
-            return sum(random_rewards), sum(agent_rewards), true_total_reward
-        else:
-            return sum(random_rewards), sum(agent_rewards), 0
+            agent_v_random_reward = self.play_one_episode(
+                first_agent="model", second_agent="random", state=copy.deepcopy(state)
+            )
+            agent_v_agent_reward = self.play_one_episode(
+                first_agent="model", second_agent="model", state=copy.deepcopy(state)
+            )
+            random_v_random.append(random_v_random_reward)
+            agent_v_random.append(agent_v_random_reward)
+            agent_v_agent.append(agent_v_agent_reward)
 
-    def evaluate(self, num_episodes, evaluation_db=None):
-        random_rewards = []
-        agent_rewards = []
-        if evaluation_db:
-            true_total_reward = 0
-            with open(evaluation_db, "rb") as fp:
-                evaluation_db = pickle.load(fp)
+            if self.evaluation_db:
+                outcome = self.evaluation_db[tuple(board)]
+                if outcome[first_player - 1] == "1":
+                    optimal_play_reward += 1
+                else:
+                    optimal_play_reward -= 1
+        return (
+            sum(random_v_random),
+            sum(agent_v_random),
+            sum(agent_v_agent),
+            optimal_play_reward,
+        )
+
+    def evaluate(self, num_episodes):
+        random_v_random = []
+        agent_v_random = []
+        agent_v_agent = []
+        if self.evaluation_db:
+            optimal_play_reward = 0
+
         for i in tqdm(range(num_episodes)):
             board, first_player = self.environment.reset(hard_reset=True)
             state = {
                 "board": board,
                 "first_player": first_player,
             }
-            random_reward = self.play_one_episode(
-                random_agent=True, state=copy.deepcopy(state)
+            random_v_random_reward = self.play_one_episode(
+                first_agent="random", second_agent="random", state=copy.deepcopy(state)
             )
-            agent_reward = self.play_one_episode(state=copy.deepcopy(state))
-            random_rewards.append(random_reward)
-            agent_rewards.append(agent_reward)
-            if evaluation_db:
-                outcome = evaluation_db[tuple(board)]
+            agent_v_random_reward = self.play_one_episode(
+                first_agent="model", second_agent="random", state=copy.deepcopy(state)
+            )
+            agent_v_agent_reward = self.play_one_episode(
+                first_agent="model", second_agent="model", state=copy.deepcopy(state)
+            )
+
+            random_v_random.append(random_v_random_reward)
+            agent_v_random.append(agent_v_random_reward)
+            agent_v_agent.append(agent_v_agent_reward)
+
+            if self.evaluation_db:
+                outcome = self.evaluation_db[tuple(board)]
                 if outcome[first_player - 1] == "1":
-                    true_total_reward += 1
+                    optimal_play_reward += 1
                 else:
-                    true_total_reward -= 1
+                    optimal_play_reward -= 1
+
         print(f"After {num_episodes} episodes:")
         print(
-            f"[Random Agent] Mean Reward: {np.mean(random_rewards)}, Total Reward: {sum(random_rewards)}"
+            f"[Random vs Random] Mean: {np.mean(random_v_random)}, Total: {sum(random_v_random)}"
         )
         print(
-            f"[Trained Agent] Mean Reward: {np.mean(agent_rewards)}, Total Reward: {sum(agent_rewards)}"
+            f"[Model vs Random] Mean: {np.mean(agent_v_random)}, Total: {sum(agent_v_random)}"
         )
-        if evaluation_db:
-            print(f"True Total Reward: {true_total_reward}")
+        print(
+            f"[Model vs Model] Mean: {np.mean(agent_v_agent)}, Total: {sum(agent_v_agent)}"
+        )
+        if self.evaluation_db:
+            print(f"Optimal Play Reward: {optimal_play_reward}")
