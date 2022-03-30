@@ -35,6 +35,6 @@ class DeployableAgent:
         with torch.no_grad():
             state = torch.tensor(board + [current_player]).unsqueeze(0).float()
             action_mask = self.compute_action_mask(legal_moves)
-            action = self.policy_network(state)
+            action = self.policy_network(state.unsqueeze(0).to(self.device))
             action = int((action + action_mask).argmax().cpu())
         return self.reverse_action_map[action]

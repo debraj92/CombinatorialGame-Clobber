@@ -158,7 +158,7 @@ class Agent:
             else:
                 # Get action probabilities from model
                 with torch.no_grad():
-                    action = self.policy_network(state.to(self.device))
+                    action = self.policy_network(state.unsqueeze(0).to(self.device))
                     # Mask Moves & pick greedy action
                     action = (action + action_mask).argmax().cpu()
 
@@ -270,7 +270,7 @@ class Agent:
 
     def predict(self, state, action_mask):
         with torch.no_grad():
-            action = self.policy_network(state)
+            action = self.policy_network(state.unsqueeze(0))
             action = (action + action_mask).argmax().cpu()
         return self.reverse_action_map[int(action)]
 
