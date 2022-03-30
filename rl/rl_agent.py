@@ -270,7 +270,7 @@ class Agent:
 
     def predict(self, state, action_mask):
         with torch.no_grad():
-            action = self.policy_network(state.unsqueeze(0))
+            action = self.policy_network(state.unsqueeze(0).to(self.device))
             action = (action + action_mask).argmax().cpu()
         return self.reverse_action_map[int(action)]
 
