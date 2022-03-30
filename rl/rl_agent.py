@@ -72,7 +72,8 @@ class Agent:
         self.gamma = gamma
         self.epsilon_start = epsilon_start
         self.epsilon_end = epsilon_end
-        self.epsilon_decay = epsilon_decay
+        # We multiply decay * board size to ensure significant exploration
+        self.epsilon_decay = epsilon_decay * self.board_size
         self.iterations = 0
 
         # Setup device
@@ -120,7 +121,7 @@ class Agent:
                     agent_v_random_rewards,
                     agent_v_agent_rewards,
                     optimal_play_rewards,
-                ) = self.silent_evaluate(evaluation_episodes)
+                ) = self.evaluate(evaluation_episodes)
                 tqdm.write(
                     f"Iteration {self.iterations}:\n[Random vs Random] {random_v_random_rewards}\t[Agent vs Random] {agent_v_random_rewards}\t[Agent vs Agent] {agent_v_agent_rewards}\t[Optimal Play] {optimal_play_rewards}"
                 )
@@ -326,10 +327,10 @@ class Agent:
 
         return reward
 
-    def silent_evaluate(self, num_episodes):
-        random_v_random = []
-        agent_v_random = []
-        agent_v_agent = []
+    def evaluate(self, num_episodes):
+        random_v_random = 0
+        agent_v_random = 0
+        agent_v_agent = 0
         optimal_play_reward = 0
         # Play the same N episodes for each comparison
         for _ in range(num_episodes):
@@ -347,66 +348,18 @@ class Agent:
             agent_v_agent_reward = self.play_one_episode(
                 first_agent="model", second_agent="model", state=copy.deepcopy(state)
             )
-            random_v_random.append(random_v_random_reward)
-            agent_v_random.append(agent_v_random_reward)
-            agent_v_agent.append(agent_v_agent_reward)
+
+            random_v_random += random_v_random_reward if random_v_random_reward > 0 else 0
+            agent_v_random += agent_v_random_reward if agent_v_random_reward > 0 else 0
+            agent_v_agent += agent_v_agent_reward if agent_v_agent_reward > 0 else 0
 
             if self.evaluation_db:
                 outcome = self.evaluation_db[tuple(board)]
                 if outcome[first_player - 1] == "1":
                     optimal_play_reward += 1
-                else:
-                    optimal_play_reward -= 1
         return (
-            sum(random_v_random),
-            sum(agent_v_random),
-            sum(agent_v_agent),
-            optimal_play_reward,
+            (random_v_random * 100)/ num_episodes,
+            (agent_v_random * 100)/ num_episodes,
+            (agent_v_agent * 100)/ num_episodes,
+            (optimal_play_reward * 100)/ num_episodes,
         )
-
-    def evaluate(self, num_episodes):
-        random_v_random = []
-        agent_v_random = []
-        agent_v_agent = []
-        if self.evaluation_db:
-            optimal_play_reward = 0
-
-        for i in tqdm(range(num_episodes)):
-            board, first_player = self.environment.reset(hard_reset=True)
-            state = {
-                "board": board,
-                "first_player": first_player,
-            }
-            random_v_random_reward = self.play_one_episode(
-                first_agent="random", second_agent="random", state=copy.deepcopy(state)
-            )
-            agent_v_random_reward = self.play_one_episode(
-                first_agent="model", second_agent="random", state=copy.deepcopy(state)
-            )
-            agent_v_agent_reward = self.play_one_episode(
-                first_agent="model", second_agent="model", state=copy.deepcopy(state)
-            )
-
-            random_v_random.append(random_v_random_reward)
-            agent_v_random.append(agent_v_random_reward)
-            agent_v_agent.append(agent_v_agent_reward)
-
-            if self.evaluation_db:
-                outcome = self.evaluation_db[tuple(board)]
-                if outcome[first_player - 1] == "1":
-                    optimal_play_reward += 1
-                else:
-                    optimal_play_reward -= 1
-
-        print(f"After {num_episodes} episodes:")
-        print(
-            f"[Random vs Random] Mean: {np.mean(random_v_random)}, Total: {sum(random_v_random)}"
-        )
-        print(
-            f"[Model vs Random] Mean: {np.mean(agent_v_random)}, Total: {sum(agent_v_random)}"
-        )
-        print(
-            f"[Model vs Model] Mean: {np.mean(agent_v_agent)}, Total: {sum(agent_v_agent)}"
-        )
-        if self.evaluation_db:
-            print(f"Optimal Play Reward: {optimal_play_reward}")

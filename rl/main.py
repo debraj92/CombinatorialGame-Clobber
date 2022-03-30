@@ -8,9 +8,9 @@ from rl import rl_agent
 
 if __name__ == "__main__":
     BOARD_SIZE = 40
-    NB_TRAINING_STEPS = 100000
+    NB_TRAINING_STEPS = 10000
     NB_EVALUATION_EPISODES = 1000
-    EVALUATION_DB = None #os.path.join("rl", "validation_set_upto15.pkl")
+    EVALUATION_DB = None # os.path.join("rl", "validation_set_upto15.pkl")
     SAVE_DIR = "model_size_40"
     BATCH_SIZE = 64
     LEARNING_RATE = 1e-4
@@ -41,10 +41,32 @@ if __name__ == "__main__":
         evaluation_interval=VALIDATION_INTERVAL,
         evaluation_episodes=VALIDATION_EPISODES,
     )
-    agent.evaluate(NB_EVALUATION_EPISODES)
-    agent.evaluate(NB_EVALUATION_EPISODES)
-    agent.evaluate(NB_EVALUATION_EPISODES)
-    agent.evaluate(NB_EVALUATION_EPISODES)
+
+    average_rvr = 0
+    average_avr = 0
+    average_ava = 0
+    average_opt = 0
+    for _ in range(5):
+        (
+            random_v_random_winrate,
+            agent_v_random_winrate,
+            agent_v_agent_winrate,
+            optimal_play_winrate,
+        ) = agent.evaluate(NB_EVALUATION_EPISODES)
+        average_rvr += random_v_random_winrate
+        average_avr += agent_v_random_winrate
+        average_ava += agent_v_agent_winrate
+        average_opt += optimal_play_winrate
+
+    average_rvr /= 5
+    average_avr /= 5
+    average_ava /= 5
+    average_opt /= 5
+
+    print(
+        f"[Random vs Random] {average_rvr}\n[Agent vs Random] {average_avr}\n[Agent vs Agent] {average_ava}\n[Optimal Play] {average_opt}"
+    )
+
     agent.save_for_deployment(os.path.join(SAVE_DIR, "model.pt"))
 
     plt.figure(figsize=(8, 6), dpi=300)
