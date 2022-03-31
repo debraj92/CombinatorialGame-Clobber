@@ -1,6 +1,7 @@
 import sys
 import matplotlib.pyplot as plt
 import os
+import pickle
 
 sys.path.append("./")
 
@@ -8,7 +9,7 @@ from rl import rl_agent
 
 if __name__ == "__main__":
     BOARD_SIZE = 40
-    NB_TRAINING_STEPS = 10000
+    NB_TRAINING_STEPS = 100000
     NB_EVALUATION_EPISODES = 1000
     EVALUATION_DB = None # os.path.join("rl", "validation_set_upto15.pkl")
     SAVE_DIR = "model_size_40"
@@ -20,7 +21,7 @@ if __name__ == "__main__":
     EPSILON_END = 0.05
     TARGET_MODEL_UPDATE = 100
     VALIDATION_EPISODES = 1000
-    VALIDATION_INTERVAL = 5000
+    VALIDATION_INTERVAL = 10000
 
     if not os.path.exists(SAVE_DIR):
         os.makedirs(SAVE_DIR)
@@ -67,20 +68,31 @@ if __name__ == "__main__":
         f"[Random vs Random] {average_rvr}\n[Agent vs Random] {average_avr}\n[Agent vs Agent] {average_ava}\n[Optimal Play] {average_opt}"
     )
 
+    plt.rcParams['agg.path.chunksize'] = 10000000
     agent.save_for_deployment(os.path.join(SAVE_DIR, "model.pt"))
 
-    plt.figure(figsize=(8, 6), dpi=300)
-    plt.plot(rewards, label="Average Reward")
-    plt.xlabel("Episodes")
-    plt.ylabel("Average Reward")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(os.path.join(SAVE_DIR, "average_reward.jpg"))
+    try:
+        plt.figure(figsize=(8, 6), dpi=300)
+        plt.plot(rewards, label="Average Reward")
+        plt.xlabel("Episodes")
+        plt.ylabel("Average Reward")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(SAVE_DIR, "average_reward.jpg"))
+    except Exception as e:
+        print(e)
+        with open(os.path.join(SAVE_DIR, "average_reward.pkl"), "wb") as fp:
+            pickle.dump(rewards, fp)
 
-    plt.figure(figsize=(8, 6), dpi=300)
-    plt.plot(losses, label="Average Loss per Episode")
-    plt.xlabel("Episodes")
-    plt.ylabel("Loss")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(os.path.join(SAVE_DIR, "average_losses.jpg"))
+    try:
+        plt.figure(figsize=(8, 6), dpi=300)
+        plt.plot(losses, label="Average Loss per Episode")
+        plt.xlabel("Episodes")
+        plt.ylabel("Loss")
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(SAVE_DIR, "average_losses.jpg"))
+    except Exception as e:
+        print(e)
+        with open(os.path.join(SAVE_DIR, "average_losses.pkl"), "wb") as fp:
+            pickle.dump(losses, fp)
