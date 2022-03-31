@@ -38,3 +38,17 @@ class DeployableAgent:
             action = self.policy_network(state.unsqueeze(0).to(self.device))
             action = int((action + action_mask).argmax().cpu())
         return self.reverse_action_map[action]
+
+    def compute_legal_move_ids(self, legal_moves):
+        return set(self.action_map[legal_move] for legal_move in legal_moves)
+
+    def move_ordering(self, board, current_player, legal_moves):
+        """
+        Returns an ordered list of moves to play.
+        """
+        with torch.no_grad():
+            state = torch.tensor(board + [current_player]).unsqueeze(0).float()
+            legal_moves = self.compute_legal_move_ids(legal_moves)
+            preds = self.policy_network(state.unsqueeze(0).to(self.device))
+            preds = preds.detach().cpu().flatten().argsort().int().tolist()
+            return [self.reverse_action_map[action] for action in preds if action in legal_moves]
