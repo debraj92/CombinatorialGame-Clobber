@@ -42,6 +42,8 @@ class Agent:
         epsilon_end=0.05,
         epsilon_decay=200,
         learning_rate=1e-3,
+        tau=1e-3,
+        use_soft_update=True,
         evaluation_db=None,
     ):
         # Setup Environment
@@ -49,6 +51,20 @@ class Agent:
         self.environment = ClobberEnvironment(self.board_size)
         self.action_map = self.environment.get_action_map()
         self.reverse_action_map = {value: key for key, value in self.action_map.items()}
+
+        # Setup hyperparameters
+        self.iterations = 0
+        self.gamma = gamma
+        self.tau = tau
+        self.use_soft_update = use_soft_update
+        self.epsilon_start = epsilon_start
+        self.epsilon_end = epsilon_end
+        # We multiply decay * board size to ensure significant exploration
+        self.epsilon_decay = epsilon_decay * self.board_size
+
+        # Setup device
+        self.gpu = torch.cuda.is_available()
+        self.device = torch.device("cuda" if self.gpu else "cpu")
 
         # Setup policy & target networks
         # Input Size = Board Size + 1 to indicate current player
@@ -58,9 +74,20 @@ class Agent:
         self.target_network = DQN(
             output_size=len(self.action_map), max_board_size=self.board_size
         )
-        # We train only the policy network;
+
         # target network uses the policy network's weights
         self.target_network.load_state_dict(self.policy_network.state_dict())
+
+        # Setup the lazy linear layers
+        with torch.no_grad():
+            self.policy_network.eval()
+            self.target_network.eval()
+            board, player = self.environment.reset()
+            state = torch.tensor(board + [player]).unsqueeze(0).float()
+            _ = self.policy_network(state.unsqueeze(0))
+            _ = self.target_network(state.unsqueeze(0))
+
+        # Only policy network is trained
         self.policy_network.train()
         self.target_network.eval()
 
@@ -69,16 +96,6 @@ class Agent:
             self.policy_network.parameters(), lr=learning_rate
         )
         self.memory = ReplayMemory(memory_size)
-        self.gamma = gamma
-        self.epsilon_start = epsilon_start
-        self.epsilon_end = epsilon_end
-        # We multiply decay * board size to ensure significant exploration
-        self.epsilon_decay = epsilon_decay * self.board_size
-        self.iterations = 0
-
-        # Setup device
-        self.gpu = torch.cuda.is_available()
-        self.device = torch.device("cuda" if self.gpu else "cpu")
 
         # Move models to GPU if possible
         self.policy_network.to(self.device)
@@ -192,8 +209,11 @@ class Agent:
             if loss:
                 all_losses.append(loss)
 
+            # Use a soft update
+            if self.use_soft_update:
+                self.soft_update()
             # Update target network every target_model_update steps
-            if self.iterations % target_model_update == 0:
+            elif self.iterations % target_model_update == 0:
                 self.target_network.load_state_dict(self.policy_network.state_dict())
 
             self.iterations += 1
@@ -267,6 +287,14 @@ class Agent:
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
         return loss.detach().cpu()
+
+    def soft_update(self):
+        for policy_params, target_params in zip(
+            self.policy_network.parameters(), self.target_network.parameters()
+        ):
+            target_params.data.copy_(
+                self.tau * policy_params.data + (1.0 - self.tau) * target_params.data
+            )
 
     def predict(self, state, action_mask):
         with torch.no_grad():
@@ -349,7 +377,9 @@ class Agent:
                 first_agent="model", second_agent="model", state=copy.deepcopy(state)
             )
 
-            random_v_random += random_v_random_reward if random_v_random_reward > 0 else 0
+            random_v_random += (
+                random_v_random_reward if random_v_random_reward > 0 else 0
+            )
             agent_v_random += agent_v_random_reward if agent_v_random_reward > 0 else 0
             agent_v_agent += agent_v_agent_reward if agent_v_agent_reward > 0 else 0
 
@@ -358,8 +388,8 @@ class Agent:
                 if outcome[first_player - 1] == "1":
                     optimal_play_reward += 1
         return (
-            (random_v_random * 100)/ num_episodes,
-            (agent_v_random * 100)/ num_episodes,
-            (agent_v_agent * 100)/ num_episodes,
-            (optimal_play_reward * 100)/ num_episodes,
+            (random_v_random * 100) / num_episodes,
+            (agent_v_random * 100) / num_episodes,
+            (agent_v_agent * 100) / num_episodes,
+            (optimal_play_reward * 100) / num_episodes,
         )
