@@ -50,11 +50,16 @@ if __name__ == "__main__":
     board = sys.argv[1]
     first_player = sys.argv[2]
     timeout = float(sys.argv[3])
+    if len(sys.argv) >= 5:
+        cnnOrderingOn = bool(int(sys.argv[4]))  # must be 1 or 0
+    else:
+        cnnOrderingOn = True
     # Start timer
     start = time.time()
     # Setup
     first_player = string_to_player(first_player)
     clobber = Clobber_1d(board, first_player)
+    clobber.cnn_enabled = cnnOrderingOn
     # Run algorithm
     play = PlayClobber()
     outcome, winning_move, nodes = play.negamaxClobberGamePlay(

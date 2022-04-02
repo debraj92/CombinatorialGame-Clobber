@@ -105,7 +105,7 @@ generateGameCombinations(10000, boardSize)
 printGames()
 #print()
 #games_for_training = compress()
-printGames()
+#printGames()
 #sys.exit()
 
 
@@ -118,7 +118,7 @@ def inference_black(board):
     start = time.time()
     # Load TFLite model and allocate tensors.
     #interpreter = tf.lite.Interpreter(model_path="./final-models/m7_b_m9_w/clobber-black-cnn.tflite")
-    interpreter = tf.lite.Interpreter(model_path="./clobber-black-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./final-models/best3/clobber-black-cnn.tflite")
     #interpreter = tf.lite.Interpreter(model_path="./clobber-black-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
@@ -180,7 +180,7 @@ def inference_white(board):
     start = time.time()
     # Load TFLite model and allocate tensors.
     #interpreter = tf.lite.Interpreter(model_path="./final-models/m7_b_m9_w/clobber-white-cnn.tflite")
-    interpreter = tf.lite.Interpreter(model_path="./clobber-white-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./final-models/best3/clobber-white-cnn.tflite")
     #interpreter = tf.lite.Interpreter(model_path="./clobber-white-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
