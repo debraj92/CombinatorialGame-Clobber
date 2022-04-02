@@ -29,8 +29,7 @@ class PlayClobber:
         self.winningMove = ()
         self.model_black_interpreter = self.modelInferenceInit("./final-models/best3/clobber-black-cnn.tflite")
         self.model_white_interpreter = self.modelInferenceInit("./final-models/best3/clobber-white-cnn.tflite")
-        # self.rl_model = deployable_rl_agent.DeployableAgent("./model_size_25/model.pt")
-        # self.rl_max_board_size = 25
+        # self.rl_model = deployable_rl_agent.DeployableAgent("./model_size_25_v2")
 
     def modelInferenceInit(self, model_path):
         interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -138,7 +137,7 @@ class PlayClobber:
         return 0
 
     def rlMoveOrdering(self, state, legalMoves):
-        board = state.getPaddedBoard(self.rl_max_board_size)
+        board = state.getPaddedBoard(self.rl_model.board_size)
         player = state.toPlay
         # TODO: Simplify bigger boards to check if it reaches size 40
         # Just run our prediction directly
@@ -179,7 +178,7 @@ class PlayClobber:
 
             legalMoves = self.cnnMoveOrdering(state, legalMoves, previous_score, cnnActive)
             
-            # if len(state.board) <= self.rl_max_board_size:
+            # if len(state.board) <= self.rl_model.board_size:
             #     # Ignore RL approach if board is too big
             #     legalMoves = self.rlMoveOrdering(state, legalMoves)
             # else:

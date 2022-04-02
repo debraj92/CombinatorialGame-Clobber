@@ -1,42 +1,35 @@
-import torch
+import pickle
 import sys
+import onnxruntime
+import os
 
 sys.path.append("../")
-from rl.models import DQN
 
 
 class DeployableAgent:
     def __init__(self, model_directory):
-        # Setup device
-        self.gpu = torch.cuda.is_available()
-        self.device = torch.device("cuda" if self.gpu else "cpu")
 
-        # Load data from disk
-        saved_model = torch.load(model_directory, map_location=self.device)
+        with open(os.path.join(model_directory, "model_config.pkl"), "rb") as fp:
+            config = pickle.load(fp)
 
         # Initialize Action Maps
-        self.action_map = saved_model["action_map"]
-        self.reverse_action_map = saved_model["reverse_action_map"]
-        self.board_size = saved_model["board_size"]
-
-        # Create model & restore weights
-        self.policy_network = DQN(
-            output_size=len(self.action_map), max_board_size=self.board_size
-        ).to(self.device)
-        self.policy_network.load_state_dict(saved_model["policy_network"])
-        self.policy_network.eval()
+        self.action_map = config["action_map"]
+        self.reverse_action_map = config["reverse_action_map"]
+        self.board_size = config["board_size"]
+        self.session = onnxruntime.InferenceSession(
+            os.path.join(model_directory, "model.onnx")
+        )
 
     def compute_action_mask(self, legal_moves, mask_value=-1e9):
-        return torch.tensor(
-            [0 if action in legal_moves else mask_value for action in self.action_map]
-        ).to(self.device)
+        return [
+            0 if action in legal_moves else mask_value for action in self.action_map
+        ]
 
     def predict(self, board, current_player, legal_moves):
-        with torch.no_grad():
-            state = torch.tensor(board + [current_player]).unsqueeze(0).float()
-            action_mask = self.compute_action_mask(legal_moves)
-            action = self.policy_network(state.unsqueeze(0).to(self.device))
-            action = int((action + action_mask).argmax().cpu())
+        state = [float(x) for x in board] + [float(current_player)]
+        action = self.session.run(None, {"input.1": state})
+        action_mask = self.compute_action_mask(legal_moves)
+        action = int((action + action_mask).argmax().cpu())
         return self.reverse_action_map[action]
 
     def compute_legal_move_ids(self, legal_moves):
@@ -46,9 +39,10 @@ class DeployableAgent:
         """
         Returns an ordered list of moves to play.
         """
-        with torch.no_grad():
-            state = torch.tensor(board + [current_player]).unsqueeze(0).float()
-            legal_moves = self.compute_legal_move_ids(legal_moves)
-            preds = self.policy_network(state.unsqueeze(0).to(self.device))
-            preds = preds.detach().cpu().flatten().argsort().int().tolist()
-            return [self.reverse_action_map[action] for action in preds if action in legal_moves]
+        state = [[[float(x) for x in board] + [float(current_player)]]]
+        preds = self.session.run(None, {"input.1": state})
+        legal_moves = self.compute_legal_move_ids(legal_moves)
+        preds = preds[0][0].argsort().tolist()
+        return [
+            self.reverse_action_map[action] for action in preds if action in legal_moves
+        ]
