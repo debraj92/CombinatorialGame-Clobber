@@ -220,6 +220,9 @@ class Clobber_1d(object):
         countOfPieces = len(self.player_positions) + len(self.opponent_positions)
         return self.cnn_enabled and (score > -0.7) and 25 <= countOfPieces
 
+    def getPaddedBoard(self, max_length):
+        return self.board + ([EMPTY] * (max_length - len(self.board)))
+
     def computePrunedMovesFromSubgames(self, isCnnActive):
 
         games = dict()

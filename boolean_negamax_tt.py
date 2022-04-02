@@ -2,7 +2,7 @@ import time
 import keras.models
 import numpy as np
 import tensorflow as tf
-
+from rl import deployable_rl_agent
 
 class PlayClobber:
     # Transposition table to avoid re-computation of proven lost games
@@ -29,6 +29,8 @@ class PlayClobber:
         self.winningMove = ()
         self.model_black_interpreter = self.modelInferenceInit("./final-models/best3/clobber-black-cnn.tflite")
         self.model_white_interpreter = self.modelInferenceInit("./final-models/best3/clobber-white-cnn.tflite")
+        # self.rl_model = deployable_rl_agent.DeployableAgent("./model_size_25/model.pt")
+        # self.rl_max_board_size = 25
 
     def modelInferenceInit(self, model_path):
         interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -135,6 +137,16 @@ class PlayClobber:
 
         return 0
 
+    def rlMoveOrdering(self, state, legalMoves):
+        board = state.getPaddedBoard(self.rl_max_board_size)
+        player = state.toPlay
+        # TODO: Simplify bigger boards to check if it reaches size 40
+        # Just run our prediction directly
+        legal_moves = [move for legal_moves in legalMoves for move in legal_moves[0]]
+        # Returns an ordered list of moves of form (src,target)
+        moves = self.rl_model.move_ordering(board, player, legal_moves)
+        return [(move, 0) for move in moves]
+
     def negamaxClobber1d(self, state, previous_score, depth, start_time, timeout):
 
         if (time.time() - start_time) > timeout:
@@ -166,7 +178,12 @@ class PlayClobber:
                     return result
 
             legalMoves = self.cnnMoveOrdering(state, legalMoves, previous_score, cnnActive)
-            #legalMoves = self.noMoveOrdering(legalMoves)
+            
+            # if len(state.board) <= self.rl_max_board_size:
+            #     # Ignore RL approach if board is too big
+            #     legalMoves = self.rlMoveOrdering(state, legalMoves)
+            # else:
+            #     legalMoves = self.noMoveOrdering(legalMoves)
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
