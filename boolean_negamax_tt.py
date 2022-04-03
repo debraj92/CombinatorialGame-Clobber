@@ -32,7 +32,7 @@ class PlayClobber:
             self.model_black_interpreter = self.modelInferenceInit("./final-models/best3/clobber-black-cnn.tflite")
             self.model_white_interpreter = self.modelInferenceInit("./final-models/best3/clobber-white-cnn.tflite")
         elif self.move_ordering["rl"]:
-            self.rl_model = deployable_rl_agent.DeployableAgent("./model_size_40")
+            self.rl_model = deployable_rl_agent.DeployableAgent("./rl_models/model_size_40")
 
     def modelInferenceInit(self, model_path):
         interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -122,7 +122,9 @@ class PlayClobber:
 
     def rlMoveOrdering(self, state, legalMoves, previous_score):
         # TODO: Simplify bigger boards to less than model.board_size?
-        if len(state.board) <= self.rl_model.board_size:
+        # RL is active only if the model can accomodate the board
+        # AND the number of tokens on the board is at least 20.
+        if (len(state.board) <= self.rl_model.board_size) and (len(state.player_positions) + len(state.opponent_positions) >= 20):
             board = state.getPaddedBoard(self.rl_model.board_size)
             player = state.toPlay
             legal_moves = [move for legal_moves in legalMoves for move in legal_moves[0]]
