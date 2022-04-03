@@ -19,7 +19,7 @@ class PlayClobber:
 
     max_depth = 0
 
-    def __init__(self):
+    def __init__(self, move_ordering):
         self.PROVEN_WIN = 10000
         self.PROVEN_LOSS = -10000
         self.UNKNOWN = -5
@@ -27,9 +27,12 @@ class PlayClobber:
         self.DISPROVEN = 1
         self.INFINITY = 10000
         self.winningMove = ()
-        self.model_black_interpreter = self.modelInferenceInit("./final-models/best3/clobber-black-cnn.tflite")
-        self.model_white_interpreter = self.modelInferenceInit("./final-models/best3/clobber-white-cnn.tflite")
-        # self.rl_model = deployable_rl_agent.DeployableAgent("./model_size_25_v2")
+        self.move_ordering = move_ordering
+        if self.move_ordering["cnn"]:
+            self.model_black_interpreter = self.modelInferenceInit("./final-models/best3/clobber-black-cnn.tflite")
+            self.model_white_interpreter = self.modelInferenceInit("./final-models/best3/clobber-white-cnn.tflite")
+        elif self.move_ordering["rl"]:
+            self.rl_model = deployable_rl_agent.DeployableAgent("./model_size_40")
 
     def modelInferenceInit(self, model_path):
         interpreter = tf.lite.Interpreter(model_path=model_path)
@@ -101,8 +104,33 @@ class PlayClobber:
         for move_set, _, win, lose, _ in legalMoves:
             for nextMove in move_set:
                 moves.append((nextMove, 0))
-
         return moves
+
+    def defaultMoveOrdering(self, legalMoves, previous_score):
+        moves = []
+        for move_set, _, win, lose, _ in legalMoves:
+            for nextMove in move_set:
+                if win and not lose:
+                    moves.append((nextMove, 0.6))
+                elif not win and lose:
+                    moves.append((nextMove, -0.6))
+                else:
+                    moves.append((nextMove, 1/len(move_set)))
+        if previous_score > -0.7:
+            moves = sorted(moves, key=lambda x: x[1])
+        return moves
+
+    def rlMoveOrdering(self, state, legalMoves, previous_score):
+        # TODO: Simplify bigger boards to less than model.board_size?
+        if len(state.board) <= self.rl_model.board_size:
+            board = state.getPaddedBoard(self.rl_model.board_size)
+            player = state.toPlay
+            legal_moves = [move for legal_moves in legalMoves for move in legal_moves[0]]
+            # Returns an ordered list of moves of form (src,target)
+            moves = self.rl_model.move_ordering(board, player, legal_moves)
+            return [(move, 1) for move in moves]
+        else:
+            return self.defaultMoveOrdering(legalMoves, previous_score)
 
     def handleProcessingSubgames(self, legalMoves, boardHash):
         l_class = True
@@ -136,16 +164,6 @@ class PlayClobber:
 
         return 0
 
-    def rlMoveOrdering(self, state, legalMoves):
-        board = state.getPaddedBoard(self.rl_model.board_size)
-        player = state.toPlay
-        # TODO: Simplify bigger boards to check if it reaches size 40
-        # Just run our prediction directly
-        legal_moves = [move for legal_moves in legalMoves for move in legal_moves[0]]
-        # Returns an ordered list of moves of form (src,target)
-        moves = self.rl_model.move_ordering(board, player, legal_moves)
-        return [(move, 0) for move in moves]
-
     def negamaxClobber1d(self, state, previous_score, depth, start_time, timeout):
 
         if (time.time() - start_time) > timeout:
@@ -164,7 +182,7 @@ class PlayClobber:
             return -self.INFINITY
 
         if boardHash not in self.moves_:
-            cnnActive = state.isCNNMoveOrderingActive(previous_score)
+            cnnActive = state.isCNNMoveOrderingActive(previous_score) if self.move_ordering["cnn"] else False
             legalMoves = state.computePrunedMovesFromSubgames(cnnActive)
             if len(legalMoves) == 0:
                 self.proven_lost_states.add(boardHash)
@@ -176,13 +194,13 @@ class PlayClobber:
                 if abs(result) == self.INFINITY:
                     return result
 
-            legalMoves = self.cnnMoveOrdering(state, legalMoves, previous_score, cnnActive)
-            
-            # if len(state.board) <= self.rl_model.board_size:
-            #     # Ignore RL approach if board is too big
-            #     legalMoves = self.rlMoveOrdering(state, legalMoves)
-            # else:
-            #     legalMoves = self.noMoveOrdering(legalMoves)
+            if self.move_ordering["cnn"] or self.move_ordering["default"]:
+                legalMoves = self.cnnMoveOrdering(state, legalMoves, previous_score, cnnActive)
+            elif self.move_ordering["rl"]:
+                legalMoves = self.rlMoveOrdering(state, legalMoves, previous_score)
+            elif self.move_ordering["none"]:
+                legalMoves = self.noMoveOrdering(legalMoves)
+
             self.moves_[boardHash] = legalMoves
         else:
             legalMoves = self.moves_[boardHash]
