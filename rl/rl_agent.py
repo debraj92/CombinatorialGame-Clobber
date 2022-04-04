@@ -83,9 +83,9 @@ class Agent:
             self.policy_network.eval()
             self.target_network.eval()
             board, player = self.environment.reset()
-            state = torch.tensor(board + [player]).unsqueeze(0).float()
-            _ = self.policy_network(state.unsqueeze(0))
-            _ = self.target_network(state.unsqueeze(0))
+            state = torch.tensor(board + [player]).reshape(1, 1, -1).float()
+            _ = self.policy_network(state)
+            _ = self.target_network(state)
 
         # Only policy network is trained
         self.policy_network.train()
@@ -154,7 +154,7 @@ class Agent:
         board, player = self.environment.reset()
         all_losses = []
         done = False
-        state = torch.tensor(board + [player]).unsqueeze(0).float()
+        state = torch.tensor(board + [player]).reshape(1, 1, -1).float()
 
         while not done:
             # Get legal actions in this state
@@ -175,7 +175,7 @@ class Agent:
             else:
                 # Get action probabilities from model
                 with torch.no_grad():
-                    action = self.policy_network(state.unsqueeze(0).to(self.device))
+                    action = self.policy_network(state.to(self.device))
                     # Mask Moves & pick greedy action
                     action = (action + action_mask).argmax().cpu()
 
@@ -194,7 +194,7 @@ class Agent:
 
                 # Play move
                 board, player, _, done = self.environment.step(opponent_action)
-                next_state = torch.tensor(board + [player]).unsqueeze(0).float()
+                next_state = torch.tensor(board + [player]).reshape(1, 1, -1).float()
 
             # If we're done the next state is the terminal state -> None
             if done:
@@ -230,7 +230,7 @@ class Agent:
         batch = Transition(*zip(*transitions))  # (state, action, next_state, reward)
 
         # Separate out data into separate batches
-        state_batch = torch.stack(batch.state).float().to(self.device)
+        state_batch = torch.cat(batch.state).float().to(self.device)
         action_batch = torch.stack(batch.action).unsqueeze(dim=1).to(self.device)
         reward_batch = torch.tensor(batch.reward).to(self.device)
 
@@ -252,7 +252,7 @@ class Agent:
                 non_final_next_states.append(state)
                 non_final_action_masks.append(mask)
         non_final_next_states = (
-            torch.stack(non_final_next_states).float().to(self.device)
+            torch.cat(non_final_next_states).float().to(self.device)
         )
         non_final_action_masks = (
             torch.stack(non_final_action_masks).float().to(self.device)
@@ -298,7 +298,7 @@ class Agent:
 
     def predict(self, state, action_mask):
         with torch.no_grad():
-            action = self.policy_network(state.unsqueeze(0).to(self.device))
+            action = self.policy_network(state.to(self.device))
             action = (action + action_mask).argmax().cpu()
         return self.reverse_action_map[int(action)]
 
@@ -329,7 +329,7 @@ class Agent:
             if first_agent == "random":
                 action = random.choice(legal_actions)
             else:
-                state = torch.tensor(board + [player]).unsqueeze(0).float()
+                state = torch.tensor(board + [player]).reshape(1, 1, -1).float()
                 action_mask = self.compute_action_mask(legal_actions)
                 action = self.predict(state, action_mask)
 
@@ -346,7 +346,7 @@ class Agent:
                 if second_agent == "random":
                     action = random.choice(legal_actions)
                 else:
-                    state = torch.tensor(board + [player]).unsqueeze(0).float()
+                    state = torch.tensor(board + [player]).reshape(1, 1, -1).float()
                     action_mask = self.compute_action_mask(legal_actions)
                     action = self.predict(state, action_mask)
 
