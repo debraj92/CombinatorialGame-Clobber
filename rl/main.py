@@ -5,36 +5,51 @@ import pickle
 
 sys.path.append("./")
 
+from rl import self_play_rl_agent
 from rl import rl_agent
 
 if __name__ == "__main__":
     BOARD_SIZE = 40
     NB_TRAINING_STEPS = 100000
     NB_EVALUATION_EPISODES = 1000
-    EVALUATION_DB = None # os.path.join("rl", "validation_set_upto15.pkl")
-    SAVE_DIR = "model_size_40"
+    USE_SELFPLAY = False
+    EVALUATION_DB = None  # os.path.join("rl", "validation_set_upto15.pkl")
+    SAVE_DIR = f"model_size_{BOARD_SIZE}"
+    if USE_SELFPLAY:
+        SAVE_DIR += "_selfplay"
     BATCH_SIZE = 64
     LEARNING_RATE = 1e-4
     GAMMA = 0.99
-    EPSILON_DECAY_RATE = 2000
+    EPSILON_DECAY_RATE = 1000
     EPSILON_START = 0.95
     EPSILON_END = 0.05
     TARGET_MODEL_UPDATE = 100
     VALIDATION_EPISODES = 1000
-    VALIDATION_INTERVAL = 10000
+    VALIDATION_INTERVAL = 40000
 
     if not os.path.exists(SAVE_DIR):
         os.makedirs(SAVE_DIR)
 
-    agent = rl_agent.Agent(
-        board_size=BOARD_SIZE,
-        epsilon_decay=EPSILON_DECAY_RATE,
-        epsilon_start=EPSILON_START,
-        epsilon_end=EPSILON_END,
-        learning_rate=LEARNING_RATE,
-        gamma=GAMMA,
-        evaluation_db=EVALUATION_DB,
-    )
+    if USE_SELFPLAY:
+        agent = self_play_rl_agent.Agent(
+            board_size=BOARD_SIZE,
+            epsilon_decay=EPSILON_DECAY_RATE,
+            epsilon_start=EPSILON_START,
+            epsilon_end=EPSILON_END,
+            learning_rate=LEARNING_RATE,
+            gamma=GAMMA,
+            evaluation_db=EVALUATION_DB,
+        )
+    else:
+        agent = rl_agent.Agent(
+            board_size=BOARD_SIZE,
+            epsilon_decay=EPSILON_DECAY_RATE,
+            epsilon_start=EPSILON_START,
+            epsilon_end=EPSILON_END,
+            learning_rate=LEARNING_RATE,
+            gamma=GAMMA,
+            evaluation_db=EVALUATION_DB,
+        )
     iterations, rewards, losses = agent.train(
         NB_TRAINING_STEPS,
         batch_size=BATCH_SIZE,
@@ -68,7 +83,7 @@ if __name__ == "__main__":
         f"[Random vs Random] {average_rvr}\n[Agent vs Random] {average_avr}\n[Agent vs Agent] {average_ava}\n[Optimal Play] {average_opt}"
     )
 
-    plt.rcParams['agg.path.chunksize'] = 10000000
+    plt.rcParams["agg.path.chunksize"] = 10000000
     agent.save_for_deployment(os.path.join(SAVE_DIR, "model.pt"))
 
     try:
