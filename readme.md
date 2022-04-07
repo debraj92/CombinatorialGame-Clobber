@@ -31,4 +31,5 @@ We recommend training the models using a GPU as the training process would other
 2. Install required libraries (Not required if you installed the requirements from the inference section): `pip install -r rl/requirements.txt`
 3. Modify the config in `rl/main.py` to suit your requirements.
 4. Run `rl/main.py`
-
+5. Run `rl/pytorch_to_onnx.py` to convert the model to the ONNX format for faster inference.
+6. Set the RL model path [line 35] in `boolean_negamax_tt.py` to this new model.
