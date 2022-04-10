@@ -16,6 +16,7 @@ PROVEN_LOSS = -10000
 TEST_BLACK = True
 TEST_WHITE = True
 
+move_ordering = {"rl": False, "cnn": True, "default": False, "none": False}
 
 def createRandomBoard(size, skipDot):
     if skipDot:
@@ -118,7 +119,7 @@ def inference_black(board):
     start = time.time()
     # Load TFLite model and allocate tensors.
     #interpreter = tf.lite.Interpreter(model_path="./final-models/m7_b_m9_w/clobber-black-cnn.tflite")
-    interpreter = tf.lite.Interpreter(model_path="./final-models/best3/clobber-black-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./cnn-models/best3/clobber-black-cnn.tflite")
     #interpreter = tf.lite.Interpreter(model_path="./clobber-black-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
@@ -144,7 +145,7 @@ if TEST_BLACK:
     for game in games_for_training:
         #print(game)
         clobber = Clobber_1d(game, 1)
-        play = PlayClobber()
+        play = PlayClobber(move_ordering)
         test_start = time.time()
         expected_outcome, _, _ = play.negamaxClobberGamePlay(clobber, test_start, 1000)
         start = time.time()
@@ -180,7 +181,7 @@ def inference_white(board):
     start = time.time()
     # Load TFLite model and allocate tensors.
     #interpreter = tf.lite.Interpreter(model_path="./final-models/m7_b_m9_w/clobber-white-cnn.tflite")
-    interpreter = tf.lite.Interpreter(model_path="./final-models/best3/clobber-white-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./cnn-models/best3/clobber-white-cnn.tflite")
     #interpreter = tf.lite.Interpreter(model_path="./clobber-white-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
@@ -207,7 +208,7 @@ if TEST_WHITE:
     for game in games_for_training:
         #print(game)
         clobber = Clobber_1d(game, 2)
-        play = PlayClobber()
+        play = PlayClobber(move_ordering)
         test_start = time.time()
         expected_outcome, _, _ = play.negamaxClobberGamePlay(clobber, test_start, 1000)
 

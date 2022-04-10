@@ -1,7 +1,7 @@
 import time
 
-from a2.boolean_negamax_tt import PlayClobber
-from a2.clobber_1d import Clobber_1d
+from boolean_negamax_tt import PlayClobber
+from clobber_1d import Clobber_1d
 from game_basics import EMPTY, BLACK, WHITE
 from search_basics import INFINITY, PROVEN_WIN, PROVEN_LOSS, UNKNOWN
 
@@ -28,6 +28,9 @@ model.load_weights(latest)
 
 
 class cnn:
+
+    move_ordering = {"rl": False, "cnn": True, "default": False, "none": False}
+	
     elements = [".", "B", "W"]
 
     games_for_training = set()
@@ -109,7 +112,7 @@ class cnn:
         for game in self.games_for_training:
             print(game)
             clobber = Clobber_1d(game, first_player)
-            play = PlayClobber()
+            play = PlayClobber(self.move_ordering)
             start_time = time.time()
             outcome, _, _ = play.negamaxClobberGamePlay(clobber, start_time)
             print("Done")
@@ -402,12 +405,12 @@ class cnn_trainer:
 
 t = cnn_trainer()
 
-#t.createModelFromScratch(17, t.RANDOM_COMBINATION, 800000, False)
+t.createModelFromScratch(17, t.RANDOM_COMBINATION, 800000, False)
 
 #t.retrainModelWithSample(500000, 26)
 
 #t.retrainModelWithSample(600000, 20, True)
 
-t.finalizeRetraining()
+#t.finalizeRetraining()
 
 t.generateTFLite()

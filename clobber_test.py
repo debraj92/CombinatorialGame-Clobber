@@ -15,7 +15,7 @@ def inference_black(board):
     X = clobber.board_features
     X = np.reshape(X, (1, 40, 2))
     # Load TFLite model and allocate tensors.
-    interpreter = tf.lite.Interpreter(model_path="./final-models/best3/clobber-black-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./cnn-models/best3/clobber-black-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
     input_details = interpreter.get_input_details()
@@ -33,7 +33,7 @@ def inference_white(board):
     X = clobber.board_features
     X = np.reshape(X, (1, 40, 2))
     # Load TFLite model and allocate tensors.
-    interpreter = tf.lite.Interpreter(model_path="./final-models/best3/clobber-white-cnn.tflite")
+    interpreter = tf.lite.Interpreter(model_path="./cnn-models/best3/clobber-white-cnn.tflite")
     interpreter.allocate_tensors()
     # Get input and output tensors.
     input_details = interpreter.get_input_details()
