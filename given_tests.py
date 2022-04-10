@@ -45,7 +45,7 @@ def format_winning_move(winning_move):
 
 
 # Set this key based on the move ordering you want to test
-move_ordering = {"rl": False, "cnn": False, "default": True, "none": False}
+move_ordering = {"rl": False, "cnn": True, "default": False, "none": False}
 play = PlayClobber(move_ordering)
 
 
