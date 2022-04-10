@@ -2,7 +2,7 @@
 ## Akash Saravanan (asaravan), Debraj Ray (debraj1)
 ---
 
-## Inference
+## Run Clobber Solver with preferred move ordering
 
 1. Install Python 3.8.
 2. Install required libraries: `pip install -r requirements.txt`
@@ -19,11 +19,24 @@
     W 23-22 4.388262097702026 25444
    ```
 
-## Training
+## Model generation
 
 We recommend training the models using a GPU as the training process would otherwise be slower.
 
 ### Training - CNN
+
+1. Install Python 3.8.
+2. Install required libraries (Not required if you installed the requirements from the inference section): `pip install -r rl/requirements.txt`
+3. Modify `cnn_control.py` and choose training a fresh model or re-training a trained model.
+4. The number of samples, sparsity of board and method of generation of synthetic samples can also be controlled.
+5. Run training by running the `cnn_control.py` file.
+
+### Inference - CNN
+
+1. Modify `inference_tflite.py` file. Choose whether accuracy is tested for the black-cnn, white-cnn or both.
+2. Control board size and sparsity (distribution of black, white pieces) and number of samples to be used for the accuracy check.
+3. Run `inference_tflite.py`
+
 
 ### Training - RL
 

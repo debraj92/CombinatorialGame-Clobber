@@ -402,7 +402,7 @@ class cnn_trainer:
 
 t = cnn_trainer()
 
-#t.createModelFromScratch(17, t.RANDOM_COMBINATION, 800000, False)
+t.createModelFromScratch(17, t.RANDOM_COMBINATION, 800000, False)
 
 #t.retrainModelWithSample(500000, 26)
 

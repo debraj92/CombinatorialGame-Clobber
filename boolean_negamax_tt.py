@@ -29,8 +29,8 @@ class PlayClobber:
         self.winningMove = ()
         self.move_ordering = move_ordering
         if self.move_ordering["cnn"]:
-            self.model_black_interpreter = self.modelInferenceInit("./final-models/best3/clobber-black-cnn.tflite")
-            self.model_white_interpreter = self.modelInferenceInit("./final-models/best3/clobber-white-cnn.tflite")
+            self.model_black_interpreter = self.modelInferenceInit("./cnn-models/best3/clobber-black-cnn.tflite")
+            self.model_white_interpreter = self.modelInferenceInit("./cnn-models/best3/clobber-white-cnn.tflite")
         elif self.move_ordering["rl"]:
             self.rl_model = deployable_rl_agent.DeployableAgent("./rl_models/model_size_40")
 
@@ -116,8 +116,8 @@ class PlayClobber:
                     moves.append((nextMove, -0.6))
                 else:
                     moves.append((nextMove, 1/len(move_set)))
-        if previous_score > -0.7:
-            moves = sorted(moves, key=lambda x: x[1])
+        
+        moves = sorted(moves, key=lambda x: x[1])
         return moves
 
     def rlMoveOrdering(self, state, legalMoves, previous_score):
