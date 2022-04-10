@@ -12,11 +12,17 @@
 
    For example:
    ```
-    python .\git_good.py BWBWBWBWBWBWBWBWBWBWBWBWBW W 10 --cnn_move_ordering
-    W 23-24 4.413733477554321 32887
+    python3 git_good.py BWBWBWBWBWBWBWBWBWBWBWBWBWBW W 100 --cnn_move_ordering
+    W 21-22 4.279016017913818 90713
 
-    python .\git_good.py BWBWBWBWBWBWBWBWBWBWBWBWBW W 10 --rl_move_ordering
-    W 23-22 4.388262097702026 25444
+    python3 git_good.py BWBWBWBWBWBWBWBWBWBWBWBWBWBW W 100 --rl_move_ordering
+    W 13-14 4.321457862854004 74800
+    
+    python3 git_good.py BWBWBWBWBWBWBWBWBWBWBWBWBWBW W 100 --default_move_ordering
+    W 21-22 7.818457841873169 173465
+    
+    python3 git_good.py BWBWBWBWBWBWBWBWBWBWBWBWBWBW W 100 --no_move_ordering
+    W 21-22 54.99504590034485 1200074
    ```
 
 ## Model generation
