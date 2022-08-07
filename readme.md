@@ -24,6 +24,11 @@
     python3 git_good.py BWBWBWBWBWBWBWBWBWBWBWBWBWBW W 100 --no_move_ordering
     W 21-22 54.99504590034485 1200074
    ```
+   The input is formatted as follows:
+   [python3] [file to execute.py] [starting 1D clobber board position] [player to start (Black / White)] [Maximum time to execute] [--type of move ordering]
+   
+   The output is formatted as follows:
+   [Winner (Black / White)] [First winning move] [Time taken to run the heuristic search] [number of nodes of the game tree expanded]
 
 ## Model generation
 
