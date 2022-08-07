@@ -12,6 +12,8 @@ PROVEN = 0
 DISPROVEN = 1
 INFINITY = 1000000
 
+move_ordering = {"rl": False, "cnn": True, "default": False, "none": False}
+
 def opponent(player):
     if player == BLACK:
         return WHITE
@@ -42,7 +44,7 @@ def format_winning_move(winning_move):
     else:
         return "None"
 
-play = PlayClobber()
+play = PlayClobber(move_ordering)
 
 class clobberPlayTests(unittest.TestCase):
 

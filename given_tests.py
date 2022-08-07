@@ -44,7 +44,9 @@ def format_winning_move(winning_move):
         return "None"
 
 
-play = PlayClobber()
+# Set this key based on the move ordering you want to test
+move_ordering = {"rl": False, "cnn": True, "default": False, "none": False}
+play = PlayClobber(move_ordering)
 
 
 class clobberPlayTests(unittest.TestCase):
@@ -52,6 +54,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -63,6 +66,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -74,6 +78,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BB", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -85,6 +90,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BWBWBW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         # outcome, winning_move, nodes = play.negamaxClobberIterativeDeepening(clobber, 1)
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
@@ -97,6 +103,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -108,6 +115,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BBBW.BWW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -119,6 +127,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BBBW.BWW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -130,6 +139,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWBWBW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -141,6 +151,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BWBWBWBWBWBW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -152,6 +163,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -163,6 +175,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -175,6 +188,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWB.WBWBWBW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -187,6 +201,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BWBWBWB.WBWBWBW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -199,6 +214,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWB", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -210,7 +226,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWB", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 5000)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -221,6 +238,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BWBWBWBW.WBWBWBB", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -232,6 +250,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBW.WBWBWBB", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -251,6 +270,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("WBWBWBWW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -262,6 +282,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("WWBWBWBWW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -273,6 +294,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWWB", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -284,6 +306,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -295,6 +318,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("WBWBWBWBWBWBWBWBWBWBWB", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         # 4.21 - Black Wins, # 3.75 - WHITE WINS, Memory < 1 MB
@@ -307,6 +331,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWB", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -318,6 +343,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWB", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -329,6 +355,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWB", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -340,6 +367,7 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWW", first_player)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
         outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start)
         end = time.time()
         print(
@@ -355,9 +383,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWBWBW", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -368,9 +395,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWBWBW", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -381,9 +407,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("WBWBWBWBWBBBWBWBWBWBWBWB", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 250
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 250)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -394,9 +419,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("WBWBWBWBWBWBWBWWWBWBWBWB", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -407,9 +431,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = WHITE
         clobber = Clobber_1d("WBBWWBWBWBBBWBWBWBWBWBWB", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -420,9 +443,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("WBWBWBWBWBWBWBWWWWBBWBWB", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -433,9 +455,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWBWBWB", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 300
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 300)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -446,9 +467,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWBWBW.BWBWBWBWBWBW", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 300
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 300)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -459,9 +479,8 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("BWBWBWBWBWBW.WBWBWBWBWBWB", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 300
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 300)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
@@ -484,51 +503,41 @@ class clobberPlayTests(unittest.TestCase):
         start = time.time()
         first_player = BLACK
         clobber = Clobber_1d("WBWBWBWBWBWBWBWBWBWBWBWBWBWBW", first_player)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print(
             f"{outcome_to_string(outcome, first_player)} {format_winning_move(winning_move)} {end - start} {nodes}"
         )
         self.assertEqual(outcome, PROVEN_WIN)
 
-
-
     # 0.8 seconds
     # 24 positions
     def test36(self):
         start = time.time()
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWBWBW", BLACK)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print("Total time ", end - start)
         self.assertEqual(outcome, PROVEN_WIN)
 
-
-
-    #4.1s
+    # 4.1s
     def test37(self):
         start = time.time()
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWBWBBW", WHITE)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print("Total time ", end - start)
         self.assertEqual(outcome, PROVEN_WIN)
-
-
 
     # 0.9s
     def test38(self):
         start = time.time()
         clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWBWBWB", WHITE)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print("Total time ", end - start)
         self.assertEqual(outcome, PROVEN_WIN)
@@ -536,12 +545,21 @@ class clobberPlayTests(unittest.TestCase):
     def test39(self):
         start = time.time()
         clobber = Clobber_1d("BW.WBW.BBWW", BLACK)
-        outcome, winning_move, nodes = play.negamaxClobberGamePlay(
-            clobber, start, 150
-        )
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
         end = time.time()
         print("Total time ", end - start)
         self.assertEqual(outcome, PROVEN_LOSS)
+
+    def test40(self):
+        start = time.time()
+        clobber = Clobber_1d("W.B.WW.", BLACK)
+        clobber.cnn_enabled = True if move_ordering["cnn"] else False
+        outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, start, 150)
+        end = time.time()
+        print("Total time ", end - start)
+        self.assertEqual(outcome, PROVEN_LOSS)
+
 
 if __name__ == "__main__":
     unittest.main()

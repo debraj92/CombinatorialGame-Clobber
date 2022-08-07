@@ -4,8 +4,13 @@ from SubgameCache import clobberSubgames
 from game_basics import EMPTY, BLACK, WHITE, isEmptyBlackWhite, opponent
 import time
 
+import keras.models
+import numpy as np
+
 
 class Clobber_1d(object):
+    board_features = None
+    MAX_LENGTH_FEATURES = 40
     winning_black_positions = dict()
     winning_white_positions = dict()
     n_positions = set()
@@ -17,19 +22,14 @@ class Clobber_1d(object):
     opponent_positions = set()
     first_player = WHITE
     opponent_player = BLACK
+    cnn_enabled = True
 
-    @classmethod
-    def standard_board(cls, size):
-        pairs = (size + 1) // 2
-        board = [BLACK, WHITE] * pairs
-        return board[:size]
-
-    @classmethod
-    def custom_board(cls, start_position):  # str of B, W, E or .
+    def custom_board(self, start_position):  # str of B, W, E or .
         color_map = {"B": BLACK, "W": WHITE, "E": EMPTY, ".": EMPTY}
         board = []
         for c in start_position:
             board.append(color_map[c])
+
         return board
 
     @classmethod
@@ -68,10 +68,8 @@ class Clobber_1d(object):
     def __init__(self, start_position, first_player=WHITE, HashSeed=None):
         self.first_player = first_player
         self.setOpponentPlayer()
-        if type(start_position) == int:
-            self.init_board = Clobber_1d.standard_board(start_position)
-        else:
-            self.init_board = Clobber_1d.custom_board(start_position)
+        self.board_features = None
+        self.board = self.custom_board(start_position)
         self.resetGame(first_player)
         self.updatePositions()
         self.hash_table = []
@@ -88,6 +86,8 @@ class Clobber_1d(object):
         self.winning_white_positions = gameCache.winning_white_positions
         self.p_positions = gameCache.p_positions
         self.n_positions = gameCache.n_positions
+
+        self.count_legal_moves = 0
 
     def __hash__(self):
         return self.getBoardHash()
@@ -108,7 +108,6 @@ class Clobber_1d(object):
         return self.toPlay == self.opponent_player
 
     def resetGame(self, first_player):
-        self.board = self.init_board
         self.toPlay = first_player
         self.opponent_positions = set()
         self.player_positions = set()
@@ -131,6 +130,17 @@ class Clobber_1d(object):
         self.board_hash_value ^= self.hash_table[to][self.toPlay]
         return savedHashValue
 
+    def updateFeatureAtIndex(self, idx, feature):
+        if feature == EMPTY:
+            self.board_features[idx][0] = 0
+            self.board_features[idx][1] = 0
+        elif feature == BLACK:
+            self.board_features[idx][0] = 0
+            self.board_features[idx][1] = 1
+        else:
+            self.board_features[idx][0] = 1
+            self.board_features[idx][1] = 0
+
     def play(self, move):
         src, to = move
         if self.toPlay == self.first_player:
@@ -143,6 +153,7 @@ class Clobber_1d(object):
             self.player_positions.remove(to)
         self.board[src] = EMPTY
         self.board[to] = self.toPlay
+
         savedHashValue = self.updateBoardHashValue(move)
         self.switchToPlay()
         return savedHashValue
@@ -152,6 +163,7 @@ class Clobber_1d(object):
         src, to = move
         self.board[to] = self.opp_color()
         self.board[src] = self.toPlay
+
         self.board_hash_value = savedHashValue
         if self.toPlay == self.first_player:
             self.player_positions.add(src)
@@ -161,6 +173,16 @@ class Clobber_1d(object):
             self.opponent_positions.add(src)
             self.opponent_positions.remove(to)
             self.player_positions.add(to)
+
+    def applyMoveForFeatureEvaluation(self, move):
+        src, to = move
+        self.updateFeatureAtIndex(src, EMPTY)
+        self.updateFeatureAtIndex(to, self.toPlay)
+
+    def undoMoveFromFeatureEvaluation(self, move):
+        src, to = move
+        self.updateFeatureAtIndex(to, self.opp_color())
+        self.updateFeatureAtIndex(src, self.toPlay)
 
     def winner(self, isEndOfGame):
         if isEndOfGame:
@@ -194,7 +216,14 @@ class Clobber_1d(object):
         self.board_hash_value = zobristHashValue
         return self.board_hash_value
 
-    def computePrunedMovesFromSubgames(self):
+    def isCNNMoveOrderingActive(self, score):
+        countOfPieces = len(self.player_positions) + len(self.opponent_positions)
+        return self.cnn_enabled and (score > -0.7) and 25 <= countOfPieces
+
+    def getPaddedBoard(self, max_length):
+        return self.board + ([EMPTY] * (max_length - len(self.board)))
+
+    def computePrunedMovesFromSubgames(self, isCnnActive):
 
         games = dict()
         BW = BLACK + WHITE
@@ -202,11 +231,13 @@ class Clobber_1d(object):
         current_game = ""
         inverse_game = ""
         reversed_inverse_game = ""
-
         isfirstPlayer = self.toPlay == self.first_player
         opp = self.opp_color()
         last = len(self.board) - 1
         positions = self.player_positions
+        if isCnnActive:
+            self.board_features = np.full((self.MAX_LENGTH_FEATURES, 2), [[0, 0]], dtype=np.float32)
+
         flips = 0
         runningColor = None
         flip_left_side = 0
@@ -221,8 +252,15 @@ class Clobber_1d(object):
             winning_boards = self.winning_white_positions
             losing_boards = self.winning_black_positions
 
+        self.count_legal_moves = 0
         for i, p in enumerate(self.board):
             if self.board[i] != EMPTY:
+                if isCnnActive:
+                    if self.board[i] == 1:
+                        self.board_features[i][1] = 1
+                    else:
+                        self.board_features[i][0] = 1
+
                 if flips <= 2:
                     if runningColor is None or runningColor != self.board[i]:
                         flips += 1
@@ -240,13 +278,17 @@ class Clobber_1d(object):
                     if i < last and self.board[i + 1] == opp:
                         moves_subgame.add((i, i + 1))
             else:
+
                 isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
                 if len(current_game) > 0:
                     if (current_game == "12" or current_game == "21") and current_game in games:
+                        self.count_legal_moves -= len(current_game)
                         games.pop(current_game)
                     elif inverse_game in games:
+                        self.count_legal_moves -= len(inverse_game)
                         games.pop(inverse_game)
                     elif reversed_inverse_game in games:
+                        self.count_legal_moves -= len(reversed_inverse_game)
                         games.pop(reversed_inverse_game)
                     elif not isZero:
                         totalMoves = len(moves_subgame)
@@ -262,6 +304,7 @@ class Clobber_1d(object):
                                 sortKey = totalMoves
 
                             games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
+                            self.count_legal_moves += totalMoves
 
                     current_game = ""
                     inverse_game = ""
@@ -275,10 +318,13 @@ class Clobber_1d(object):
         isZero = (flips == 2 and flip_left_side >= 2 and flip_right_side >= 2)
         if len(current_game) > 0:
             if (current_game == "12" or current_game == "21") and current_game in games:
+                self.count_legal_moves -= len(current_game)
                 games.pop(current_game)
             elif inverse_game in games:
+                self.count_legal_moves -= len(inverse_game)
                 games.pop(inverse_game)
             elif reversed_inverse_game in games:
+                self.count_legal_moves -= len(reversed_inverse_game)
                 games.pop(reversed_inverse_game)
             elif not isZero:
                 totalMoves = len(moves_subgame)
@@ -294,7 +340,6 @@ class Clobber_1d(object):
                         sortKey = totalMoves
 
                     games[current_game] = (moves_subgame, sortKey, iswinning, islosing, isN)
+                    self.count_legal_moves += totalMoves
 
-        allMoves = sorted(games.values(), key=lambda x: x[1], reverse=True)
-
-        return allMoves
+        return games.values()

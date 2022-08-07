@@ -6,6 +6,7 @@ from search_basics import INFINITY, PROVEN_WIN, PROVEN_LOSS, UNKNOWN
 
 import unittest
 
+move_ordering = {"rl": False, "cnn": True, "default": False, "none": False}
 
 def opponent(player):
     if player == BLACK:
@@ -37,7 +38,7 @@ def format_winning_move(winning_move):
     else:
         return "None"
 
-play = PlayClobber()
+play = PlayClobber(move_ordering)
 
 class TimeoutTest(unittest.TestCase):
     def test1(self):

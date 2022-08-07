@@ -4,13 +4,18 @@ import time
 from search_basics import INFINITY, PROVEN_WIN, PROVEN_LOSS, UNKNOWN
 from game_basics import EMPTY, BLACK, WHITE
 
+
+# Set this key based on the move ordering you want to test
+move_ordering = {"rl": False, "cnn": True, "default": False, "none": False}
+
 # Basic tests
 start = time.time()
 print("Test 1")
 test_start = time.time()
 first_player = WHITE
 clobber = Clobber_1d("BBB.WB", first_player)
-play = PlayClobber()
+clobber.cnn_enabled = True if move_ordering["cnn"] else False
+play = PlayClobber(move_ordering)
 clobber.print_()
 outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, test_start)
 assert outcome == PROVEN_WIN
@@ -20,7 +25,8 @@ print("Test 2")
 test_start = time.time()
 first_player = WHITE
 clobber = Clobber_1d("BBWBB", first_player)
-play = PlayClobber()
+clobber.cnn_enabled = True if move_ordering["cnn"] else False
+play = PlayClobber(move_ordering)
 clobber.print_()
 outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, test_start)
 assert outcome == PROVEN_LOSS
@@ -30,8 +36,9 @@ print("Test 3")
 test_start = time.time()
 first_player = WHITE
 clobber = Clobber_1d("BBWBBWWBB", first_player)
+clobber.cnn_enabled = True if move_ordering["cnn"] else False
 clobber.print_()
-play = PlayClobber()
+play = PlayClobber(move_ordering)
 outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, test_start)
 assert outcome == PROVEN_LOSS
 print()
@@ -40,8 +47,9 @@ print("Test 4")
 test_start = time.time()
 first_player = WHITE
 clobber = Clobber_1d("BW.WB.WW.WBB", first_player)
+clobber.cnn_enabled = True if move_ordering["cnn"] else False
 clobber.print_()
-play = PlayClobber()
+play = PlayClobber(move_ordering)
 outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, test_start)
 assert outcome == PROVEN_LOSS
 print()
@@ -50,8 +58,9 @@ print("Test 6")
 test_start = time.time()
 first_player = WHITE
 clobber = Clobber_1d("..WWW..BWBW.BWBB.WBWBWW...", first_player)
+clobber.cnn_enabled = True if move_ordering["cnn"] else False
 clobber.print_()
-play = PlayClobber()
+play = PlayClobber(move_ordering)
 outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, test_start)
 assert outcome == PROVEN_WIN
 print()
@@ -60,8 +69,9 @@ print("Test 7")
 test_start = time.time()
 first_player = WHITE
 clobber = Clobber_1d("BWBWBWBWBWBWBWBWBWB", first_player)
+clobber.cnn_enabled = True if move_ordering["cnn"] else False
 clobber.print_()
-play = PlayClobber()
+play = PlayClobber(move_ordering)
 outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, test_start)
 assert outcome == PROVEN_WIN
 print()
@@ -70,8 +80,9 @@ print("Test 8")
 test_start = time.time()
 first_player = WHITE
 clobber = Clobber_1d("BBWBWBWB", first_player)
+clobber.cnn_enabled = True if move_ordering["cnn"] else False
 clobber.print_()
-play = PlayClobber()
+play = PlayClobber(move_ordering)
 outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, test_start)
 assert outcome == PROVEN_WIN
 print()
@@ -80,8 +91,9 @@ print("Test 9")
 test_start = time.time()
 first_player = WHITE
 clobber = Clobber_1d("BBWBWBWBWBWB..WWW..BWBW.BWBB", first_player)
+clobber.cnn_enabled = True if move_ordering["cnn"] else False
 clobber.print_()
-play = PlayClobber()
+play = PlayClobber(move_ordering)
 outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, test_start)
 assert outcome == PROVEN_WIN
 print()
@@ -90,8 +102,9 @@ print("Test 10")
 test_start = time.time()
 first_player = WHITE
 clobber = Clobber_1d("WBBWBWWBB.WBBWBBWB..WBWBB", first_player)
+clobber.cnn_enabled = True if move_ordering["cnn"] else False
 clobber.print_()
-play = PlayClobber()
+play = PlayClobber(move_ordering)
 outcome, winning_move, nodes = play.negamaxClobberGamePlay(clobber, test_start)
 assert outcome == PROVEN_LOSS
 
