@@ -52,3 +52,5 @@ We recommend training the models using a GPU as the training process would other
 4. Run `rl/main.py`
 5. Run `rl/pytorch_to_onnx.py` to convert the model to the ONNX format for faster inference.
 6. Set the RL model path [line 35] in `boolean_negamax_tt.py` to this new model.
+
+### For detailed information, please read the project report pdf.
